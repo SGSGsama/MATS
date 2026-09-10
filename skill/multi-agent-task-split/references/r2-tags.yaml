@@ -1,0 +1,52 @@
+schema_version: 1
+kind: mats_r2_tag_definitions
+criterion: Use a tag only when the candidate may be locally correct while violating a system relationship outside its local proof.
+non_triggers:
+- Local algorithm difficulty, code volume or task importance.
+- File or directory names and merely touching a related subsystem.
+- A long call chain whose complete behavior is proved by one local contract.
+tags:
+  architectural_refactor:
+    trigger: Component responsibility, dependency direction or ownership topology changes.
+    exclude: Internal rename, extraction or refactor that preserves those relationships.
+    audit: Layering, dependency direction, ownership and every affected consumer.
+  milestone_integration:
+    trigger: The candidate integrates or closes an explicit milestone across multiple accepted WPs or system outcomes.
+    exclude: Ordinary completion of one WP.
+    audit: Commitment coverage, prerequisite compatibility and the integrated outcome.
+  cross_module_contract:
+    trigger: A producer-consumer assumption between independently owned modules changes or is newly established.
+    exclude: Multiple edited directories with no inter-module contract change.
+    audit: Both sides, defaults, errors and version skew.
+  public_api_change:
+    trigger: An externally consumed API, CLI, configuration or SDK contract changes.
+    exclude: Private helper signatures or internal call cleanup.
+    audit: Existing and new consumers, compatibility, defaults, errors and documentation claims.
+  persistent_schema_change:
+    trigger: Durable data, migration or on-disk read-write compatibility changes.
+    exclude: Transient in-memory structures.
+    audit: Old and new readers/writers, migration, rollback, partial data and downgrade behavior.
+  protocol_semantics:
+    trigger: Peer-visible framing, messages, ordering, negotiation, retry or protocol states change or are reconstructed.
+    exclude: Local encoder or parser cleanup with identical peer-visible behavior.
+    audit: Both endpoints, ordering, loss, duplication, version negotiation and wire compatibility.
+  end_to_end_invariant:
+    trigger: The required property exists only across a multi-stage or multi-actor path and no local stage proves the final outcome.
+    exclude: A long call chain whose result is completely established by one local contract.
+    audit: Stage boundaries, transformed data or control, feedback paths and the final outcome.
+  state_or_ownership_invariant:
+    trigger: Identity, state, lifetime or ownership transfers across components or states.
+    exclude: Local allocation and cleanup with no external owner or later state.
+    audit: Creation, transfer, uniqueness, release, stale references and terminal states.
+  failure_recovery_invariant:
+    trigger: Failure, retry, replay, rollback, reconnect, resume or partial success can change later system behavior.
+    exclude: Local error text or fail-fast behavior with no persistent or downstream effect.
+    audit: Interrupted states, retry identity, idempotency, cleanup, replay and convergence.
+  cross_platform_contract:
+    trigger: Different OS, architecture or runtime implementations must preserve one shared behavior or format.
+    exclude: A platform-only fix with no shared guarantee or artifact.
+    audit: The shared contract, platform branches, byte, encoding and path behavior, and produced artifacts.
+  cryptographic_contract:
+    trigger: Keys, nonces, parameters, authenticated coverage or ciphertext/signature serialization must agree across components or versions.
+    exclude: A local primitive whose external contract is unchanged and locally proved.
+    audit: Producers and consumers, parameters, key lifecycle, serialization, compatibility and failure behavior.

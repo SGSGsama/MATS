@@ -1,0 +1,13 @@
+isolated_runtime: true
+jsonschema_external_required: false
+live_orca_verified: false
+model_calls: 0
+note: Binary presence is not runtime/model/permission verification. No live launch is made.
+operator_defaults_valid: true
+orca_executable: C:\Users\SGSG\AppData\Local\Programs\orca\resources\bin\orca.EXE
+policy_valid: true
+python: C:\Users\SGSG\.codex\skills\multi-agent-task-split\.venv\Scripts\python.exe
+schema_version: 9
+skill_release: '17.6'
+skill_version: 17
+yaml_module: C:\Users\SGSG\.codex\skills\multi-agent-task-split\.venv\Lib\site-packages\yaml\__init__.py

@@ -1,0 +1,37 @@
+{
+  "release": "17.6-current",
+  "measurement_unit": "utf8_bytes_not_model_tokens",
+  "root_skill_bytes": 4092,
+  "root_skill_budget_bytes": 4096,
+  "control_role_budget_bytes": 1536,
+  "leaf_role_budget_bytes": 1250,
+  "role_bytes": {
+    "control.md": 1338,
+    "engineering.md": 1015,
+    "luna_aux.md": 712,
+    "planner.md": 1046,
+    "research.md": 1108,
+    "review_r1.md": 877,
+    "review_r2.md": 912,
+    "synthesis.md": 727
+  },
+  "control_context_bytes": {
+    "mats_activation": 40800,
+    "mats_after_first_state": 48186,
+    "native_anomaly": 54850,
+    "explicit_user_migration_additional": 3400,
+    "normal_orca_skill_or_full_guide": 0
+  },
+  "generated_child_prompt_bytes": {
+    "research_initial": 6547,
+    "engineering_initial": 6463,
+    "luna_aux_initial": 4570,
+    "synthesis_initial": 4587,
+    "planner_initial": 4903,
+    "review_r1_initial": 5144,
+    "review_r2_initial": 4772,
+    "owner_continuation_default_fixture": 2120
+  },
+  "cost_accounting": "These are deterministic UTF-8 source/prompt bytes, not provider tokens. Orca orchestration/full-guide loading is forbidden in normal leaf and Control flows; actual cumulative provider usage remains authoritative.",
+  "tests": 357
+}

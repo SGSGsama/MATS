@@ -1,0 +1,40 @@
+{
+  "scenario": "two review_r1 completions in one native delivery batch",
+  "review_dispatch_ids": [
+    "D7",
+    "D15"
+  ],
+  "released_dispatch_ids": [
+    "D15"
+  ],
+  "ack_calls": 1,
+  "remaining_completion_staging": [],
+  "remaining_delivery_files": 0,
+  "imports": [
+    {
+      "dispatch_id": "D7",
+      "rc": 0,
+      "stdout": {
+        "result_ref": {
+          "path": "m0_baseline/reviews/f37f3e7ff4b4492dc41bef3bb7744fb95fd4835b1114edf8a1fc90be4e364338-review_r1.yaml",
+          "sha256": "c3c839e624ae7c3fc3910cc787beed954777ce6237648aefffaff45e1624c399"
+        },
+        "worker_done_acknowledged": false
+      },
+      "stderr": ""
+    },
+    {
+      "dispatch_id": "D15",
+      "rc": 0,
+      "stdout": {
+        "one_shot_session_released": true,
+        "result_ref": {
+          "path": "m0_baseline/reviews/c29046142c098de47a6b48fd9f8fb8638281a8f2b16f07e57c3aaab876a654f8-review_r1.yaml",
+          "sha256": "0a8832a06598ed7e714eaf8b45675477fa04342ea976eee607320a94a3fa7dc7"
+        },
+        "worker_done_acknowledged": true
+      },
+      "stderr": ""
+    }
+  ]
+}

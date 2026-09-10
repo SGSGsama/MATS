@@ -1,0 +1,5 @@
+input: synthetic structurally valid schema-7 snapshot
+legacy_done_imported: false
+model_calls: 0
+new_schema_validation_passed: true
+source_files_unchanged: true

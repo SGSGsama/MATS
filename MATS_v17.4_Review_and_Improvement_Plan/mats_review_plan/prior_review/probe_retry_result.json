@@ -1,0 +1,9 @@
+{
+  "scenario": "retry packet has a prior binding, but no native failed confirmation",
+  "rejected": true,
+  "error": "reusing a dispatch packet requires native-confirmed failed attempts; inspect unknown/successful delivery first",
+  "original_draft_preserved": false,
+  "native_task_create_calls": 0,
+  "native_start_calls": 0,
+  "replacement_prefix": "MATS-FORM\t1\tresult\n# Fill column values; keep the header and row names. Add repeatable rows as needed.\n# Rows: status, summary, impact, evidence/evide"
+}

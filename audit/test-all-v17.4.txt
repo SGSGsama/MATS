@@ -1,0 +1,15 @@
+.................................................................................................................................................................................................usage: python.exe -m unittest [-h] [--repo REPO]
+                              [--operation {owner,luna_aux,synthesis,review_r1,review_r2,planner}]
+                              [--wp WP] [--request REQUEST]
+                              [--worktree WORKTREE] [--cli CLI]
+                              [--instructions-file INSTRUCTIONS_FILE]
+                              [--instructions INSTRUCTIONS] [--continue-owner]
+                              [--retry-packet RETRY_PACKET]
+                              [--retry-sha256 RETRY_SHA256] [-cyber]
+                              [--dry-run]
+python.exe -m unittest: error: unrecognized arguments: --model gpt-6-astra --effort xhigh
+...........................................................................................................
+----------------------------------------------------------------------
+Ran 300 tests in 424.018s
+
+OK

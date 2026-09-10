@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+SKILL=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+if [ -f "$SKILL/.venv/Scripts/python.exe" ]; then
+  PY="$SKILL/.venv/Scripts/python.exe"
+elif [ -f "$SKILL/.venv/bin/python" ]; then
+  PY="$SKILL/.venv/bin/python"
+else
+  echo "MATS_NOT_INSTALLED: ask the user to run the package installer" >&2
+  exit 127
+fi
+exec "$PY" -I -B -X utf8 "$SKILL/scripts/mats.py" "$@"

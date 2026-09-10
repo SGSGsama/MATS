@@ -1,0 +1,5 @@
+interface:
+  display_name: "Multi-Agent Task Split"
+  short_description: "Deterministic role split over native Orca lifecycle"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,17 @@
+{
+  "tests_run": 8,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": 3.556,
+  "tests": [
+    "test_spawn.DeterministicSpawn.test_packet_retry_requires_a_prior_native_failed_binding",
+    "test_spawn.DeterministicSpawn.test_packet_retry_rejects_fresh_semantic_overrides",
+    "test_spawn.DeterministicSpawn.test_r1_one_shot_release_failure_keeps_completion_for_same_result_retry",
+    "test_spawn.DeterministicSpawn.test_worker_done_wait_stages_one_argument_result_import_and_ack",
+    "test_spawn.DeterministicSpawn.test_r2_worker_done_import_is_acknowledged_from_reviews_collection",
+    "test_spawn.DeterministicSpawn.test_ack_failure_keeps_staging_for_idempotent_retry",
+    "test_spawn.DeterministicSpawn.test_checkpoint_wait_returns_compact_control_and_owner_resume_anchors",
+    "test_semantics.CandidateAndReview.test_duplicate_binding_is_idempotent"
+  ]
+}

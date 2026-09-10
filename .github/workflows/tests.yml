@@ -1,0 +1,22 @@
+name: semantic-conformance
+on: [push, pull_request]
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Full offline suite
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: uv run --no-project --with pyyaml python -m unittest discover -s tests -v
+      - name: Smoke demo
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: uv run --no-project --with pyyaml python examples/smoke_demo.py

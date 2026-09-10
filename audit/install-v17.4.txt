@@ -1,0 +1,42 @@
+Using CPython 3.14.0b2 interpreter at: C:\Users\SGSG\AppData\Roaming\uv\python\cpython-3.14.0b2-windows-x86_64-none\python.exe
+Creating virtual environment at: .venv
+Activate with: source .venv/Scripts/activate
+Resolved 1 package in 672ms
+Installed 1 package in 215ms
+ + pyyaml==6.0.3
+isolated_runtime: true
+jsonschema_external_required: false
+live_orca_verified: false
+model_calls: 0
+note: Binary presence is not runtime/model/permission verification. No live launch is made.
+operator_defaults_valid: true
+orca_executable: C:\Users\SGSG\AppData\Local\Programs\orca\resources\bin\orca.EXE
+policy_valid: true
+python: C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\.venv\Scripts\python.exe
+schema_version: 9
+skill_release: '17.4'
+skill_version: 17
+yaml_module: C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\.venv\Lib\site-packages\yaml\__init__.py
+isolated_runtime: true
+jsonschema_external_required: false
+live_orca_verified: false
+model_calls: 0
+note: Binary presence is not runtime/model/permission verification. No live launch is made.
+operator_defaults_valid: true
+orca_executable: C:\Users\SGSG\AppData\Local\Programs\orca\resources\bin\orca.EXE
+policy_valid: true
+python: C:\Users\SGSG\.codex\skills\multi-agent-task-split\.venv\Scripts\python.exe
+schema_version: 9
+skill_release: '17.4'
+skill_version: 17
+yaml_module: C:\Users\SGSG\.codex\skills\multi-agent-task-split\.venv\Lib\site-packages\yaml\__init__.py
+Creating isolated runtime: C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\.venv
+> C:\uv-x86_64-pc-windows-msvc\uv.EXE venv --python C:\Users\SGSG\AppData\Roaming\uv\python\cpython-3.14.0b2-windows-x86_64-none\python.exe C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\.venv
+> C:\uv-x86_64-pc-windows-msvc\uv.EXE pip install --python C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\.venv\Scripts\python.exe --link-mode copy --only-binary=:all: --requirement D:\down\multi-agent-task-split-v17.4\multi-agent-task-split-v17.4\installer\requirements.txt
+> C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\.venv\Scripts\python.exe -I -B -X utf8 C:\Users\SGSG\.codex\skills\.multi-agent-task-split.install-g10xsboi\scripts\mats.py doctor
+> C:\Users\SGSG\.codex\skills\multi-agent-task-split\.venv\Scripts\python.exe -I -B -X utf8 C:\Users\SGSG\.codex\skills\multi-agent-task-split\scripts\mats.py doctor
+Existing destination was held open; updated payload in place and retained its verified isolated runtime.
+MATS installed: C:\Users\SGSG\.codex\skills\multi-agent-task-split
+Runtime: C:\Users\SGSG\.codex\skills\multi-agent-task-split\.venv\Scripts\python.exe
+Installed payload timestamps reflect this installation copy.
+Active Control sessions do not hot reload Skill updates; start a new Control session.

@@ -1,0 +1,5 @@
+MATS v17.6 verification: 355 core tests and 2 independent protocol invariant tests passed.
+Core suites: engineering/loading/usage 47; installation 3; routing 53; semantics 91; dispatch/activation/portability/native/runtime/migration 159.
+Independent review protocol invariants: 2.
+Environment: Windows, Git Bash, uv, UTF-8.
+No live product-domain dispatch or live-project migration was performed.

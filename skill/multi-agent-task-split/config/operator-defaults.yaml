@@ -1,0 +1,7 @@
+schema_version: 9
+caps:
+  max_parallel_operations: 4
+  max_owner_candidates_per_wp: null
+  max_luna_aux_calls_per_wp: null
+  max_synthesis_calls_per_wp: null
+  max_planner_calls_per_project: null

@@ -1,0 +1,1173 @@
+$defs:
+  evidence:
+    additionalProperties: false
+    properties:
+      path:
+        minLength: 1
+        type: string
+      sha256:
+        pattern: ^[0-9a-f]{64}$
+        type: string
+      version:
+        minLength: 1
+        type: string
+    required:
+    - path
+    - sha256
+    - version
+    type: object
+  finding:
+    additionalProperties: false
+    properties:
+      detail:
+        minLength: 1
+        type: string
+      evidence:
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 0
+        type: array
+      resolved:
+        type: boolean
+      severity:
+        enum:
+        - blocker
+        - major
+        - minor
+    required:
+    - severity
+    - detail
+    - resolved
+    - evidence
+    type: object
+  memo:
+    additionalProperties: false
+    properties:
+      claims:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      decision_requested:
+        type: string
+      downstream_impact:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      evidence_refs:
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 0
+        type: array
+      observations:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      source_refs:
+        items:
+          $ref: '#/$defs/internal_ref'
+        minItems: 0
+        type: array
+      unknowns:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+    required:
+    - claims
+    - observations
+    - unknowns
+    - downstream_impact
+    - decision_requested
+    - evidence_refs
+    type: object
+  plan:
+    additionalProperties: false
+    properties:
+      plan_id:
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        type: string
+      project_id:
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        type: string
+      schema_version:
+        const: 9
+      version:
+        minimum: 1
+        type: integer
+      work_packages:
+        items:
+          $ref: '#/$defs/work_package'
+        minItems: 0
+        type: array
+    required:
+    - schema_version
+    - plan_id
+    - project_id
+    - version
+    - work_packages
+    type: object
+  project:
+    additionalProperties: false
+    properties:
+      boundaries:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      commitments:
+        type: array
+        items:
+          $ref: '#/$defs/commitment'
+        minItems: 0
+      goal:
+        minLength: 1
+        type: string
+      open_questions:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      phase:
+        minLength: 1
+        type: string
+      project_id:
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        type: string
+      schema_version:
+        const: 9
+      strategic_risks:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      working_hypotheses:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+    required:
+    - schema_version
+    - project_id
+    - goal
+    - phase
+    - commitments
+    - boundaries
+    - strategic_risks
+    - working_hypotheses
+    - open_questions
+    type: object
+  r0:
+    additionalProperties: false
+    properties:
+      checks:
+        items:
+          additionalProperties: false
+          properties:
+            evidence:
+              items:
+                $ref: '#/$defs/evidence'
+              minItems: 0
+              type: array
+            id:
+              minLength: 1
+              type: string
+            passed:
+              type: boolean
+          required:
+          - id
+          - passed
+          - evidence
+          type: object
+        minItems: 0
+        type: array
+      snapshot:
+        pattern: ^[0-9a-f]{64}$
+        type: string
+      target_digest:
+        pattern: ^[0-9a-f]{64}$
+        type: string
+    required:
+    - target_digest
+    - snapshot
+    - checks
+    type: object
+  result:
+    additionalProperties: false
+    properties:
+      evidence:
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 0
+        type: array
+      impact:
+        enum:
+        - local
+        - module
+        - cross_boundary
+        - unknown
+      schema_version:
+        const: 9
+      snapshot:
+        pattern: ^[0-9a-f]{64}$
+        type: string
+      source_memo:
+        $ref: '#/$defs/memo'
+      status:
+        enum:
+        - candidate
+        - blocked
+        - failed
+        - plan_conflict
+      structural_tags:
+        items:
+          enum:
+          - architectural_refactor
+          - milestone_integration
+          - cross_module_contract
+          - public_api_change
+          - persistent_schema_change
+          - protocol_semantics
+          - end_to_end_invariant
+          - state_or_ownership_invariant
+          - failure_recovery_invariant
+          - cross_platform_contract
+          - cryptographic_contract
+        minItems: 0
+        type: array
+        uniqueItems: true
+      summary:
+        minLength: 1
+        type: string
+      unresolved:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      consumed_sides:
+        type: array
+        items:
+          $ref: '#/$defs/consumption'
+        minItems: 0
+    required:
+    - schema_version
+    - status
+    - summary
+    - evidence
+    - unresolved
+    - impact
+    - structural_tags
+    - snapshot
+    - source_memo
+    - consumed_sides
+    type: object
+  review:
+    additionalProperties: false
+    properties:
+      findings:
+        items:
+          $ref: '#/$defs/finding'
+        minItems: 0
+        type: array
+      outcome:
+        enum:
+        - pass
+        - fix_local
+        - needs_synthesis
+        - escalate_r2
+        - plan_conflict
+      schema_version:
+        const: 9
+      summary:
+        minLength: 1
+        type: string
+      target_digest:
+        pattern: ^[0-9a-f]{64}$
+        type: string
+      source_memo:
+        $ref: '#/$defs/memo'
+    required:
+    - schema_version
+    - outcome
+    - target_digest
+    - summary
+    - findings
+    - source_memo
+    type: object
+  side_request:
+    additionalProperties: false
+    properties:
+      affected_commitments:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      attempted:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      class:
+        enum:
+        - bulk_index
+        - candidate_search
+        - structure_extract
+        - event_normalize
+        - result_cluster
+        - test_triage
+        - diff_manifest
+        - adjudication
+        - causal_model
+        - cross_evidence_synthesis
+        - discriminating_experiment
+      competing_explanations:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      current_findings:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      evidence:
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 1
+        type: array
+      kind:
+        enum:
+        - luna_aux
+        - synthesis
+      question:
+        minLength: 1
+        type: string
+      requested_output:
+        minLength: 1
+        type: string
+      schema_version:
+        const: 9
+      verification_plan:
+        type: string
+        minLength: 1
+      benefit:
+        type: string
+        minLength: 1
+      decision_key:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+    required:
+    - schema_version
+    - kind
+    - class
+    - question
+    - current_findings
+    - competing_explanations
+    - attempted
+    - evidence
+    - affected_commitments
+    - requested_output
+    - verification_plan
+    - benefit
+    - decision_key
+    type: object
+  side_result:
+    additionalProperties: false
+    properties:
+      coverage:
+        additionalProperties: false
+        properties:
+          examined:
+            minimum: 0
+            type: integer
+          excluded:
+            items:
+              minLength: 1
+              type: string
+            minItems: 0
+            type: array
+          total:
+            minimum: 0
+            type: integer
+        required:
+        - examined
+        - total
+        - excluded
+        type: object
+      evidence:
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 0
+        type: array
+      proposed_next_actions:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      schema_version:
+        const: 9
+      status:
+        enum:
+        - done
+        - blocked
+        - failed
+      summary:
+        minLength: 1
+        type: string
+      unknowns:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+    required:
+    - schema_version
+    - status
+    - summary
+    - evidence
+    - unknowns
+    - coverage
+    - proposed_next_actions
+    type: object
+  work_package:
+    additionalProperties: false
+    properties:
+      constraints:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      dependencies:
+        items:
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+          type: string
+        minItems: 0
+        type: array
+      exit_conditions:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      id:
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        type: string
+      impact:
+        enum:
+        - local
+        - module
+        - cross_boundary
+        - unknown
+      objective:
+        minLength: 1
+        type: string
+      owner_role:
+        enum:
+        - research
+        - engineering
+      specialty:
+        minLength: 1
+        maxLength: 96
+        type: string
+      required_checks:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      review_policy:
+        enum:
+        - r1
+        - r2
+      scope:
+        additionalProperties: false
+        properties:
+          paths:
+            items:
+              minLength: 1
+              type: string
+            minItems: 0
+            type: array
+          refs:
+            items:
+              $ref: '#/$defs/evidence'
+            minItems: 0
+            type: array
+        required:
+        - paths
+        - refs
+        type: object
+      title:
+        minLength: 1
+        type: string
+      depends_on_commitments:
+        type: array
+        items:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        minItems: 0
+        uniqueItems: true
+      required_skills:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+    required:
+    - id
+    - title
+    - owner_role
+    - objective
+    - constraints
+    - exit_conditions
+    - dependencies
+    - required_skills
+    - scope
+    - impact
+    - review_policy
+    - required_checks
+    - depends_on_commitments
+    type: object
+  commitment:
+    type: object
+    properties:
+      id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      statement:
+        type: string
+        minLength: 1
+      scope:
+        enum:
+        - global
+        - scoped
+      applies_to:
+        type: array
+        items:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        minItems: 0
+        uniqueItems: true
+    required:
+    - id
+    - statement
+    - scope
+    - applies_to
+    additionalProperties: false
+  internal_ref:
+    type: object
+    properties:
+      path:
+        type: string
+        minLength: 1
+      sha256:
+        type: string
+        pattern: ^[0-9a-f]{64}$
+    required:
+    - path
+    - sha256
+    additionalProperties: false
+  directive:
+    type: object
+    properties:
+      id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      raw_text:
+        type: string
+        minLength: 1
+      intent:
+        enum:
+        - status
+        - technical_query
+        - local_steer
+        - project_steer
+        - unknown
+    required:
+    - id
+    - raw_text
+    - intent
+    additionalProperties: false
+  planning_request:
+    type: object
+    properties:
+      reason:
+        enum:
+        - bootstrap
+        - project_steer
+        - plan_conflict
+        - phase_gate
+        - strategic_stall
+        - milestone_audit
+      question:
+        type: string
+        minLength: 1
+      source_refs:
+        type: array
+        items:
+          $ref: '#/$defs/internal_ref'
+        minItems: 0
+      directive_ids:
+        type: array
+        items:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        minItems: 0
+        uniqueItems: true
+      affected_wp_ids:
+        type: array
+        items:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        minItems: 0
+        uniqueItems: true
+      repair_of:
+        $ref: '#/$defs/internal_ref'
+      target_milestone_id:
+        type: string
+        pattern: ^m(0|[1-9][0-9]{0,5})(_[A-Za-z0-9][A-Za-z0-9.-]{0,80})?$
+    required:
+    - reason
+    - question
+    - source_refs
+    - directive_ids
+    - affected_wp_ids
+    additionalProperties: false
+  planner_result:
+    oneOf:
+    - type: object
+      additionalProperties: false
+      properties:
+        schema_version:
+          const: 9
+        base_plan_version:
+          type: integer
+          minimum: 1
+        basis_refs:
+          type: array
+          items:
+            $ref: '#/$defs/internal_ref'
+          minItems: 0
+        invalidate_accepted:
+          type: array
+          items:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+          minItems: 0
+          uniqueItems: true
+        reason:
+          type: string
+          minLength: 1
+        mode:
+          const: full
+        project:
+          $ref: '#/$defs/project'
+        plan:
+          $ref: '#/$defs/plan'
+      required:
+      - schema_version
+      - mode
+      - base_plan_version
+      - basis_refs
+      - project
+      - plan
+      - invalidate_accepted
+      - reason
+    - type: object
+      additionalProperties: false
+      properties:
+        schema_version:
+          const: 9
+        base_plan_version:
+          type: integer
+          minimum: 1
+        basis_refs:
+          type: array
+          items:
+            $ref: '#/$defs/internal_ref'
+          minItems: 0
+        invalidate_accepted:
+          type: array
+          items:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+          minItems: 0
+          uniqueItems: true
+        reason:
+          type: string
+          minLength: 1
+        mode:
+          const: patch
+        project_patch:
+          $ref: '#/$defs/project_patch'
+        plan_patch:
+          $ref: '#/$defs/plan_patch'
+      required:
+      - schema_version
+      - mode
+      - base_plan_version
+      - basis_refs
+      - project_patch
+      - plan_patch
+      - invalidate_accepted
+      - reason
+  launch_receipt:
+    type: object
+    properties:
+      schema_version:
+        const: 9
+      run_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      task_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      dispatch_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      session_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      workspace_key:
+        type: string
+        minLength: 1
+      workspace_path:
+        type: string
+        minLength: 1
+      access:
+        enum:
+        - write
+        - read_live
+        - read_snapshot
+      fresh_context:
+        type: boolean
+      effective:
+        type: object
+        properties:
+          model:
+            type: string
+            minLength: 1
+          reasoning_effort:
+            type: string
+            minLength: 1
+        required:
+        - model
+        - reasoning_effort
+        additionalProperties: false
+      model_fallback:
+        type: object
+        properties:
+          used:
+            const: true
+          reason:
+            const: primary_model_unavailable
+        required:
+        - used
+        - reason
+        additionalProperties: false
+      packet_digest:
+        type: string
+        pattern: ^[0-9a-f]{64}$
+      source:
+        type: string
+        minLength: 1
+      simulation:
+        type: boolean
+    required:
+    - schema_version
+    - run_id
+    - task_id
+    - dispatch_id
+    - session_id
+    - workspace_key
+    - workspace_path
+    - access
+    - fresh_context
+    - effective
+    - packet_digest
+    - source
+    - simulation
+    additionalProperties: false
+  completion_receipt:
+    type: object
+    properties:
+      run_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      task_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      dispatch_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      session_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      outcome:
+        enum:
+        - succeeded
+        - failed
+      worker_done_verified:
+        const: true
+      source:
+        type: string
+        minLength: 1
+      simulation:
+        type: boolean
+    required:
+    - run_id
+    - task_id
+    - dispatch_id
+    - session_id
+    - outcome
+    - worker_done_verified
+    - source
+    - simulation
+    additionalProperties: false
+  runtime_view:
+    type: object
+    properties:
+      project_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      run_id:
+        type: string
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+      complete:
+        const: true
+      source:
+        type: string
+        minLength: 1
+      simulation:
+        type: boolean
+      active_dispatches:
+        type: array
+        items:
+          type: object
+          properties:
+            dispatch_id:
+              type: string
+              pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+            wp_id:
+              type:
+              - string
+              - 'null'
+            role:
+              type: string
+              minLength: 1
+          required:
+          - dispatch_id
+          - wp_id
+          - role
+          additionalProperties: false
+        minItems: 0
+      workspace_users:
+        type: array
+        items:
+          type: object
+          properties:
+            session_id:
+              type: string
+              pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+            workspace_key:
+              type: string
+              minLength: 1
+            access:
+              enum:
+              - write
+              - read_live
+              - read_snapshot
+            wp_id:
+              type:
+              - string
+              - 'null'
+          required:
+          - session_id
+          - workspace_key
+          - access
+          - wp_id
+          additionalProperties: false
+        minItems: 0
+      settled_dispatches:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - dispatch_id
+          - outcome
+          properties:
+            dispatch_id:
+              type: string
+              minLength: 1
+            outcome:
+              enum:
+              - succeeded
+              - failed
+    required:
+    - project_id
+    - run_id
+    - complete
+    - source
+    - simulation
+    - active_dispatches
+    - workspace_users
+    additionalProperties: false
+  consumption:
+    type: object
+    properties:
+      side_ref:
+        $ref: '#/$defs/internal_ref'
+      disposition:
+        enum:
+        - accepted
+        - partially_accepted
+        - rejected
+      reason:
+        type: string
+        minLength: 1
+      verified_evidence:
+        type: array
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 0
+    required:
+    - side_ref
+    - disposition
+    - reason
+    - verified_evidence
+    additionalProperties: false
+  control_receipt:
+    type: object
+    properties:
+      schema_version:
+        const: 9
+      run_id:
+        type: string
+        minLength: 1
+      session_id:
+        type: string
+        minLength: 1
+      effective:
+        type: object
+        properties:
+          model:
+            type: string
+            minLength: 1
+          reasoning_effort:
+            type: string
+            minLength: 1
+        required:
+        - model
+        - reasoning_effort
+        additionalProperties: false
+      role_contract_digest:
+        type: string
+        pattern: ^[0-9a-f]{64}$
+      source:
+        type: string
+        minLength: 1
+      simulation:
+        type: boolean
+    required:
+    - schema_version
+    - run_id
+    - session_id
+    - effective
+    - role_contract_digest
+    - source
+    - simulation
+    additionalProperties: false
+  project_patch:
+    type: object
+    additionalProperties: false
+    properties:
+      set:
+        type: object
+        additionalProperties: false
+        properties:
+          goal:
+            type: string
+            minLength: 1
+          phase:
+            type: string
+            minLength: 1
+          boundaries:
+            type: array
+            items:
+              type: string
+              minLength: 1
+            minItems: 0
+          strategic_risks:
+            type: array
+            items:
+              type: string
+              minLength: 1
+            minItems: 0
+          working_hypotheses:
+            type: array
+            items:
+              type: string
+              minLength: 1
+            minItems: 0
+          open_questions:
+            type: array
+            items:
+              type: string
+              minLength: 1
+            minItems: 0
+      commitments:
+        type: object
+        additionalProperties: false
+        properties:
+          upsert:
+            type: array
+            items:
+              $ref: '#/$defs/commitment'
+            minItems: 0
+          remove:
+            type: array
+            items:
+              type: string
+              pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+            minItems: 0
+            uniqueItems: true
+        required:
+        - upsert
+        - remove
+    required:
+    - set
+    - commitments
+  plan_patch:
+    type: object
+    additionalProperties: false
+    properties:
+      work_packages:
+        type: object
+        additionalProperties: false
+        properties:
+          upsert:
+            type: array
+            items:
+              $ref: '#/$defs/work_package'
+            minItems: 0
+          remove:
+            type: array
+            items:
+              type: string
+              pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+            minItems: 0
+            uniqueItems: true
+        required:
+        - upsert
+        - remove
+    required:
+    - work_packages
+  operator_control:
+    type: object
+    additionalProperties: false
+    properties:
+      schema_version:
+        const: 9
+      caps:
+        type: object
+        additionalProperties: false
+        properties:
+          max_parallel_operations:
+            type:
+            - integer
+            - 'null'
+            minimum: 1
+          max_owner_candidates_per_wp:
+            type:
+            - integer
+            - 'null'
+            minimum: 1
+          max_luna_aux_calls_per_wp:
+            type:
+            - integer
+            - 'null'
+            minimum: 1
+          max_synthesis_calls_per_wp:
+            type:
+            - integer
+            - 'null'
+            minimum: 1
+          max_planner_calls_per_project:
+            type:
+            - integer
+            - 'null'
+            minimum: 1
+        required:
+        - max_parallel_operations
+        - max_owner_candidates_per_wp
+        - max_luna_aux_calls_per_wp
+        - max_synthesis_calls_per_wp
+        - max_planner_calls_per_project
+    required:
+    - schema_version
+    - caps
+  planner_rejection:
+    type: object
+    additionalProperties: false
+    properties:
+      schema_version:
+        const: 9
+      kind:
+        const: planner_rejection
+      stage:
+        enum:
+        - output_schema
+        - output_semantics
+        - apply_semantics
+      packet_ref:
+        $ref: '#/$defs/internal_ref'
+      binding_ref:
+        $ref: '#/$defs/internal_ref'
+      proposal_ref:
+        $ref: '#/$defs/internal_ref'
+      request:
+        $ref: '#/$defs/planning_request'
+      base_plan_version:
+        type: integer
+        minimum: 1
+      result_digest:
+        type: string
+        pattern: ^[0-9a-f]{64}$
+      detail:
+        type: string
+        minLength: 1
+      repairable:
+        type: boolean
+      rejected_result_ref:
+        $ref: '#/$defs/internal_ref'
+    required:
+    - schema_version
+    - kind
+    - stage
+    - packet_ref
+    - binding_ref
+    - request
+    - base_plan_version
+    - result_digest
+    - rejected_result_ref
+    - detail
+    - repairable
+$schema: https://json-schema.org/draft/2020-12/schema

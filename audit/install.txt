@@ -1,0 +1,8 @@
+MATS v17.6 installed with install.cmd --force.
+Destination: C:\Users\SGSG\.codex\skills\multi-agent-task-split
+Install mode: in-place payload update; verified isolated runtime retained.
+Dependency manager: uv
+Dependency: pyyaml==6.0.3
+Installed doctor: passed
+Source/install payload diff excluding .venv and __pycache__: identical
+Active Control sessions do not hot reload Skill updates; start a new Control session.
