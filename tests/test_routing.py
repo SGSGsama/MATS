@@ -78,6 +78,10 @@ class NativeAdmission(Base):
             with self.assertRaises(Rejected):self.g.accept('WP1',self.view())
 
 class SemanticRouting(Base):
+    def test_release_version_does_not_rename_persisted_policy_catalog(self):
+        self.assertEqual(self.policy['policy_id'],'fixed-semantic-v17')
+        validate_policy(self.policy)
+
     def test_side_source_owner_only(self):
         b=self.launch(self.issue());ref=self.side(b);req=self.g.files.get(ref)['request']
         with self.assertRaises(Rejected):self.g.side_request(b,req,caller_session='SCONTROL')

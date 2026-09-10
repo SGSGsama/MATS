@@ -1,4 +1,4 @@
-# MATS v1.0.0 会话审计与本轮修改总览
+# MATS v1.0.1 会话审计与本轮修改总览
 
 本轮以 `init_export.md`、`engineer-session_1.md`、`control_session_1`、`control_session_2.md`、`control_session_3.md`、`control_4.md` 和现场 `.task/` 为运行证据。目标不是削弱约束，而是把可机械复现的事务工作从模型 I/O 中移走，同时保留足够的角色、路由和恢复约束，防止长任务指令漂移。
 
@@ -299,7 +299,7 @@
 ## 验证口径
 
 - Skill Creator `quick_validate.py`：通过。
-- 完整测试集合：381 项，分组运行全部通过（379 个核心测试：`test_spawn.py` 184 项、其余模块 195 项；另有 2 个独立协议不变量）。新增覆盖无 active 即返、未交付 settled 阻塞、失败 context 不续接、导入竞态、新 continuation 优先于旧 blocked source、非阻塞 mail probe/精确领取、纯语义批次一次确认、含完成事件延迟确认、普通 checksum 自动分类、内部 source ref materialize 与 status/lifecycle 分离。
+- 完整测试集合：382 项，分组运行全部通过（380 个核心测试：`test_spawn.py` 184 项、其余模块 196 项；另有 2 个独立协议不变量）。新增覆盖无 active 即返、未交付 settled 阻塞、失败 context 不续接、导入竞态、新 continuation 优先于旧 blocked source、非阻塞 mail probe/精确领取、纯语义批次一次确认、含完成事件延迟确认、普通 checksum 自动分类、内部 source ref materialize、status/lifecycle 分离，以及产品版本不得重命名持久化 policy catalog。
 - Windows 用户安装/强制替换/隔离运行测试：通过；额外覆盖含空格路径和 unmanaged interpreter 拒绝。
 - 回归覆盖：所有 role finalizer、Planner 嵌套 `scope.refs` 自动 pin、无授权只读证据自动 pin/产品快照隔离/稳定性、详细 oneOf 诊断、local evidence steer、错误事务字段覆盖、同 packet 多 retry binding、evidence manifest、模型投影、bootstrap-init、自动 Control receipt/runtime view/workspace/access、Orca 单次启动恢复、`.task` snapshot 排除、host mode 差异、单 OS mutex、GBK/UTF-8 输出、daybreak-blue 回退、Owner continuity 和小任务权限边界。
 

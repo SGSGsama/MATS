@@ -2,7 +2,7 @@
 
 MATS (`multi-agent-task-split`) is a Codex Skill for decomposing long-running work, assigning stable roles, and coordinating Orca-managed agents through implementation, review, and acceptance.
 
-Current release: **1.0.0**. MATS uses semantic versioning: the second number is incremented for functional changes, and the third for fixes or small patches. The task-contract schema has its own version (`schema_version: 9`) and is not the product version.
+Current release: **1.0.1**. MATS uses semantic versioning: the second number is incremented for functional changes, and the third for fixes or small patches. The task-contract schema has its own version (`schema_version: 9`) and is not the product version.
 
 ## Setup guide
 
@@ -99,7 +99,7 @@ In Command Prompt or PowerShell:
 %USERPROFILE%\.codex\skills\multi-agent-task-split\bin\mats.cmd doctor
 ```
 
-A healthy installation reports `version: 1.0.0`, `isolated_runtime: true`, and valid policy/operator configuration. `live_orca_verified: false` is normal: `doctor` is intentionally non-mutating and does not start an agent.
+A healthy installation reports `version: 1.0.1`, `isolated_runtime: true`, and valid policy/operator configuration. `live_orca_verified: false` is normal: `doctor` is intentionally non-mutating and does not start an agent.
 
 ## Usage
 

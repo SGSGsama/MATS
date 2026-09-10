@@ -1573,7 +1573,7 @@ class TaskLayoutValidation(Base):
     def test_current_milestone_layout_is_valid(self):
         from task_validate import validate_task_layout
         report=validate_task_layout(self.repo)
-        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.0.0')
+        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.0.1')
         self.assertNotIn('migration_guide',report)
 
     def test_legacy_top_level_state_is_reported_without_mutation(self):

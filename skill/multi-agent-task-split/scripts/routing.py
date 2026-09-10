@@ -7,7 +7,7 @@ ROLES = {'control','research','engineering','review_r1','luna_aux','synthesis','
 OWNERS = {'research','engineering'}
 AUX_CLASSES = {'bulk_index','candidate_search','structure_extract','event_normalize','result_cluster','test_triage','diff_manifest'}
 SYNTHESIS_CLASSES = {'adjudication','causal_model','cross_evidence_synthesis','discriminating_experiment'}
-POLICY_ID = 'fixed-semantic-v1'
+POLICY_ID = 'fixed-semantic-v17'
 FIXED_BINDINGS = {
     'research': {'model':'gpt-5.6-terra','reasoning_effort':'high'},
     'engineering': {'model':'gpt-5.6-terra','reasoning_effort':'high'},
