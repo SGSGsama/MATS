@@ -10,7 +10,7 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from common import Rejected, atomic_write, encode, identifier
+from common import Rejected, atomic_write, encode, identifier, load
 
 
 class AgentUnconfigured(Rejected):
@@ -113,6 +113,15 @@ def resolve_workspace_key(cli,repo,worktree='current'):
     return matches[0]['id']
 
 
+def _confirmed_release(g,dispatch_id):
+    """Return whether MATS already confirmed cleanup for this Dispatch."""
+    path=g.files.lifecycle_operation_path('release',dispatch_id)
+    if not path.is_file():return False
+    expected={'schema_version':1,'kind':'release','native_id':dispatch_id,'confirmed':True}
+    if load(path)!=expected:raise Rejected('conflicting release lifecycle operation record')
+    return True
+
+
 def _retained_owner_dispatches(g):
     state=g.state();dispatches=set()
     for ref in list(state.get('current_candidates',{}).values())+list(state.get('latest_sources',{}).values()):
@@ -121,7 +130,8 @@ def _retained_owner_dispatches(g):
         except (KeyError,TypeError,Rejected):
             continue
         if binding.get('role') in {'research','engineering'}:
-            dispatches.add(binding['receipt']['dispatch_id'])
+            dispatch_id=binding['receipt']['dispatch_id']
+            if not _confirmed_release(g,dispatch_id):dispatches.add(dispatch_id)
     return dispatches
 
 
@@ -321,7 +331,10 @@ def release_worker(cli, dispatch_id):
     identifier(dispatch_id)
     receipt=run_json([cli,'orchestration','worker-release','--dispatch',dispatch_id,'--json'])
     result=receipt.get('result') or {}
-    if result.get('dispatchId')!=dispatch_id or result.get('state')!='released':
+    exact_release=result.get('state')=='released'
+    no_owned_resource=(result.get('state')=='retained' and result.get('reason')=='no_owned_resource' and
+                       result.get('processAction')=='none')
+    if result.get('dispatchId')!=dispatch_id or not (exact_release or no_owned_resource):
         raise Rejected('native worker-release did not attest the requested released dispatch')
     return receipt
 def worker_show(cli, dispatch_id):

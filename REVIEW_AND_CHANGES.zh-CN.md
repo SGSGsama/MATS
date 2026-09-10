@@ -1,4 +1,4 @@
-# MATS v1.0.1 会话审计与本轮修改总览
+# MATS v1.0.2 会话审计与本轮修改总览
 
 本轮以 `init_export.md`、`engineer-session_1.md`、`control_session_1`、`control_session_2.md`、`control_session_3.md`、`control_4.md` 和现场 `.task/` 为运行证据。目标不是削弱约束，而是把可机械复现的事务工作从模型 I/O 中移走，同时保留足够的角色、路由和恢复约束，防止长任务指令漂移。
 
@@ -296,10 +296,16 @@
 - 现场还重放出纯 escalation delivery 未确认导致同一历史事件反复返回、`advance` 再次进入 WAIT 的独立缺口。`wait` 现在在捕获纯 question/escalation 批次后立即做一次 FIFO ack，并把事件只返回一次；任何含 `worker_done` 的批次仍保持 staged/unacked，直至全部结果导入和一次性角色释放成功，避免为了去重而吞掉候选。
 - 同一现场随后证明：新 continuation `p000083` 已完成并发送 `worker_done`，但旧相关性判断仅比较 packet ref，错误地把它当成已被旧 blocked source 淘汰，`advance` 因而先返回旧 `OWNER_RESULT_NOT_CANDIDATE`。现在使用全局单调 packet ID 区分方向：早于或等于已导入 source 的尝试可忽略，晚于 source 的 continuation 必须先完成交付导入，不能被旧结果遮蔽。
 
+### 37. v1.0.2 context-only Owner 释放回执归一化
+
+- Orca 对受监督资源返回 `state=released`；但同 session 增量派发使用的 context-only Dispatch 是 `unsupervised`，不拥有预存终端。它结算后的合法 `worker-release` 回执是同一 `dispatchId`、`state=retained`、`reason=no_owned_resource`、`processAction=none`。旧 MATS 把该合法回执误判为未确认，导致已通过 R1/R2 的候选永远卡在 accept。
+- native boundary 现在只接受上述四字段精确组合或正常 `released`；普通 retained、错 Dispatch ID 或可能执行了其他进程动作仍拒绝。确认后写入原有幂等 lifecycle 记录，runtime view 不再把已释放 MATS authority 的 settled Owner 投影成 writer。
+- 接受结果区分 `owner_dispatch_released`、`owner_session_released` 与 `owner_terminal_retained`：context-only 情况完成 Dispatch 清理和验收，但如实保留用户/Control 预存终端，不虚报关闭 session。
+
 ## 验证口径
 
 - Skill Creator `quick_validate.py`：通过。
-- 完整测试集合：382 项，分组运行全部通过（380 个核心测试：`test_spawn.py` 184 项、其余模块 196 项；另有 2 个独立协议不变量）。新增覆盖无 active 即返、未交付 settled 阻塞、失败 context 不续接、导入竞态、新 continuation 优先于旧 blocked source、非阻塞 mail probe/精确领取、纯语义批次一次确认、含完成事件延迟确认、普通 checksum 自动分类、内部 source ref materialize、status/lifecycle 分离，以及产品版本不得重命名持久化 policy catalog。
+- 完整测试集合：383 项，分组运行全部通过（381 个核心测试：`test_spawn.py` 185 项、其余模块 196 项；另有 2 个独立协议不变量）。新增覆盖无 active 即返、未交付 settled 阻塞、失败 context 不续接、导入竞态、新 continuation 优先于旧 blocked source、非阻塞 mail probe/精确领取、纯语义批次一次确认、含完成事件延迟确认、普通 checksum 自动分类、内部 source ref materialize、status/lifecycle 分离、产品版本不得重命名持久化 policy catalog，以及 context-only `no_owned_resource` 释放的精确归一化与 writer authority 清除。
 - Windows 用户安装/强制替换/隔离运行测试：通过；额外覆盖含空格路径和 unmanaged interpreter 拒绝。
 - 回归覆盖：所有 role finalizer、Planner 嵌套 `scope.refs` 自动 pin、无授权只读证据自动 pin/产品快照隔离/稳定性、详细 oneOf 诊断、local evidence steer、错误事务字段覆盖、同 packet 多 retry binding、evidence manifest、模型投影、bootstrap-init、自动 Control receipt/runtime view/workspace/access、Orca 单次启动恢复、`.task` snapshot 排除、host mode 差异、单 OS mutex、GBK/UTF-8 输出、daybreak-blue 回退、Owner continuity 和小任务权限边界。
 

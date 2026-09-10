@@ -182,6 +182,18 @@ class DeterministicSpawn(Base):
         self.assertEqual(rc,0);self.assertTrue(parse(out.getvalue().encode())['owner_session_released']);release.assert_called_once_with('orca',owner['dispatch_id']);self.assertEqual(refresh.call_count,2)
         self.assertTrue(self.g.files.lifecycle_operation_path('release',owner['dispatch_id']).is_file());self.assertIn('WP1',self.g.state()['accepted'])
 
+    def test_accept_treats_context_only_no_resource_as_dispatch_cleanup(self):
+        import dispatchctl
+        candidate=self.candidate();self.g.r0(candidate);self.review(candidate);owner=self.g.files.get(self.g.files.get(candidate)['binding_ref'])['receipt']
+        blocked=self.view(users=[{'session_id':owner['session_id'],'workspace_key':owner['workspace_key'],'access':'write','wp_id':'WP1'}]);drained=self.view()
+        retained={'ok':True,'result':{'dispatchId':owner['dispatch_id'],'state':'retained','reason':'no_owned_resource','processAction':'none'}}
+        out=io.StringIO()
+        with patch('dispatchctl.capture_runtime_view',side_effect=[(blocked,self.repo/'.task/tmp/runtime-view.yaml'),(drained,self.repo/'.task/tmp/runtime-view.yaml')]),patch('dispatchctl.release_worker',return_value=retained),contextlib.redirect_stdout(out):
+            rc=dispatchctl.main(['--repo',str(self.repo),'accept','WP1'])
+        value=parse(out.getvalue().encode())
+        self.assertEqual(rc,0);self.assertTrue(value['owner_dispatch_released']);self.assertFalse(value['owner_session_released']);self.assertTrue(value['owner_terminal_retained'])
+        self.assertIn('WP1',self.g.state()['accepted'])
+
     def test_apply_plan_releases_only_proven_affected_retained_owner(self):
         import dispatchctl
         candidate=self.candidate();owner=self.g.files.get(self.g.files.get(candidate)['binding_ref'])['receipt']
@@ -1573,7 +1585,7 @@ class TaskLayoutValidation(Base):
     def test_current_milestone_layout_is_valid(self):
         from task_validate import validate_task_layout
         report=validate_task_layout(self.repo)
-        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.0.1')
+        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.0.2')
         self.assertNotIn('migration_guide',report)
 
     def test_legacy_top_level_state_is_reported_without_mutation(self):
@@ -1636,7 +1648,7 @@ class NativeBridge(unittest.TestCase):
     def test_completed_noninject_dispatch_is_not_kept_active_by_unsupervised_worker_state(self):
         base=Base(methodName='runTest');base.setUp()
         try:
-            binding=base.launch(base.issue(),session='S-RETAINED');receipt=base.g.files.get(binding)['receipt']
+            binding=base.launch(base.issue(),session='S-RETAINED');base.candidate(b=binding);receipt=base.g.files.get(binding)['receipt']
             ready={'ok':True,'result':{'runtime':{'state':'ready','reachable':True,'connectionState':'connected','runtimeId':'RID'}}}
             workers={'ok':True,'result':{'runId':'RUN','workers':[
                 {'dispatchId':receipt['dispatch_id'],'runId':'RUN','workerState':'unsupervised',
@@ -1645,6 +1657,12 @@ class NativeBridge(unittest.TestCase):
                 view,_path=capture_runtime_view(base.g,'orca',materialize=False)
             self.assertEqual(view['active_dispatches'],[])
             self.assertEqual(view['settled_dispatches'],[{'dispatch_id':receipt['dispatch_id'],'outcome':'succeeded'}])
+            self.assertEqual(len(view['workspace_users']),1)
+            release=base.g.files.lifecycle_operation_path('release',receipt['dispatch_id'],create=True)
+            release.write_bytes(encode({'schema_version':1,'kind':'release','native_id':receipt['dispatch_id'],'confirmed':True}))
+            with patch('native_orca.ensure_runtime_ready',return_value=ready),patch('native_orca.run_json',return_value=workers):
+                after,_path=capture_runtime_view(base.g,'orca',materialize=False)
+            self.assertEqual(after['workspace_users'],[])
         finally:base.tearDown()
 
     def test_workspace_key_is_resolved_from_exact_repository(self):
@@ -1728,7 +1746,13 @@ class NativeBridge(unittest.TestCase):
         with patch('native_orca.run_json',return_value=good) as run:
             self.assertIs(native_orca.release_worker('orca','D1'),good)
         self.assertEqual(run.call_args.args[0],['orca','orchestration','worker-release','--dispatch','D1','--json'])
+        no_resource={'ok':True,'result':{'dispatchId':'D1','state':'retained','reason':'no_owned_resource','processAction':'none'}}
+        with patch('native_orca.run_json',return_value=no_resource):
+            self.assertIs(native_orca.release_worker('orca','D1'),no_resource)
         with patch('native_orca.run_json',return_value={'ok':True,'result':{'dispatchId':'D1','state':'retained'}}),self.assertRaises(Rejected):
+            native_orca.release_worker('orca','D1')
+        wrong={'ok':True,'result':{'dispatchId':'D2','state':'retained','reason':'no_owned_resource','processAction':'none'}}
+        with patch('native_orca.run_json',return_value=wrong),self.assertRaises(Rejected):
             native_orca.release_worker('orca','D1')
 
     def test_run_required_is_mechanically_bound_before_mutation(self):

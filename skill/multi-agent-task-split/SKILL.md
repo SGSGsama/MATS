@@ -3,7 +3,7 @@ name: multi-agent-task-split
 description: Managed task decomposition and Orca role dispatch.
 ---
 
-# MATS v1.0.1
+# MATS v1.0.2
 
 ## Activate
 

@@ -41,7 +41,7 @@ def _internal_ref(g,value,folder):
 def _doctor_output():
     validate_policy(load(ROOT/'config/policy.yaml'));validate_operator(load(ROOT/'config/operator-defaults.yaml'))
     runtime=managed_runtime_status()
-    return {'version':'1.0.1','schema_version':9,'policy_valid':True,'operator_defaults_valid':True,
+    return {'version':'1.0.2','schema_version':9,'policy_valid':True,'operator_defaults_valid':True,
             'live_orca_verified':False,'model_calls':0,'orca_executable':shutil.which('orca') or shutil.which('orca-ide'),
             **runtime,'jsonschema_external_required':False,
             'note':'Binary presence is not runtime/model/permission verification. No live launch is made.'}
@@ -125,11 +125,11 @@ def _confirm_lifecycle_operation(g,kind,native_id):
 
 def _release_once(g,dispatch_id,cli,*,retry_command):
     if _lifecycle_operation(g,'release',dispatch_id) is not None:return False
-    try:release_worker(cli,dispatch_id)
+    try:receipt=release_worker(cli,dispatch_id)
     except Rejected as exc:
         raise Rejected(str(exc),code='OWNER_RELEASE_UNCONFIRMED',next_operation=retry_command) from exc
     _confirm_lifecycle_operation(g,'release',dispatch_id)
-    return True
+    return receipt
 
 
 def _finish_completion_batch(g,event,cli):
@@ -170,10 +170,13 @@ def accept_with_mechanical_owner_release(g,wp_id,view,cli):
     state=g.state();candidate_ref=state['current_candidates'].get(wp_id)
     if candidate_ref is None:raise Rejected('candidate disappeared before Owner release',code='CANDIDATE_MISSING')
     candidate=g.files.get(candidate_ref);binding=g.files.get(candidate['binding_ref']);dispatch_id=binding['receipt']['dispatch_id']
-    _release_once(g,dispatch_id,cli,retry_command={'command':'accept','wp':wp_id})
+    release_receipt=_release_once(g,dispatch_id,cli,retry_command={'command':'accept','wp':wp_id})
     fresh_view=capture_runtime_view(g,cli)[0]
     accepted=g.accept(wp_id,fresh_view)
-    return {**accepted,'owner_session_released':True}
+    release_result=(release_receipt or {}).get('result') or {}
+    terminal_released=release_result.get('state')=='released'
+    return {**accepted,'owner_dispatch_released':True,'owner_session_released':terminal_released,
+            'owner_terminal_retained':not terminal_released}
 
 
 def apply_plan_with_mechanical_owner_release(g,proposal_ref,view,cli):
