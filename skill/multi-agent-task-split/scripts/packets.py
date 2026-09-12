@@ -96,6 +96,12 @@ def build(g,s,name,role,wp,request,*,cyber=False):
           'artifact_root':str(g.files.root),'request':request,'required_payload_refs':[],'available_payload_refs':[]}
     if wp:
         body['work_package']=_work_view(wp);body['project']=_project_view(s['project'],wp);body['project_projection']='global_and_current_wp_commitments'
+        if wp.get('interface_specs'):
+            body['interface_contract_policy']={
+                'source':'work_package.interface_specs',
+                'required':'Implement exact declarations and obligations; incompatibility requires plan_conflict.',
+                'advisory':'May adapt with evidence while preserving commitments and exit conditions.',
+            }
         body['dependency_bindings']=g.dependencies(s,wp)
         body['upstream']=[{'wp_id':wid,'contract':_work_view(index(s['plan'])[wid]),
                            'accepted_candidate_digest':ref['sha256'],

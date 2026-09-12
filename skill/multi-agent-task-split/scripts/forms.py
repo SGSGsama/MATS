@@ -209,6 +209,14 @@ def _work_rows(items, prefix):
         scope = item.get('scope') if isinstance(item.get('scope'), dict) else {}
         rows.extend((prefix + '_scope_path', wid, value) for value in scope.get('paths', []))
         rows.extend((prefix + '_scope_ref', wid, value) for value in _ref_paths(scope.get('refs', [])))
+        for spec in item.get('interface_specs', []):
+            sid = spec.get('id')
+            rows.append((prefix + '_interface', wid, sid, spec.get('binding'), spec.get('language'), spec.get('target_path')))
+            for field, suffix in (
+                ('declarations', 'declaration'), ('invariants', 'invariant'), ('lifecycle', 'lifecycle'),
+                ('compatibility', 'compatibility'), ('validation', 'validation'), ('basis_paths', 'basis_path'),
+            ):
+                rows.extend((prefix + '_interface_' + suffix, wid, sid, value) for value in spec.get(field, []))
     return rows
 
 
@@ -264,6 +272,7 @@ def _planner_comments(*, full):
         'Commitment rows: commitment[_upsert] <id> <global|scoped> <statement>; matching _applies rows; optional commitment_remove.',
         'WP row columns: id, owner_role, specialty, impact, review_policy, title, objective.',
         'WP child rows: *_constraint, *_exit, *_dependency, *_skill, *_scope_path, *_scope_ref, *_check, *_commitment.',
+        'Optional Engineering interface: *_interface <wp> <id> <required|advisory> <language> <target_path>; repeat *_interface_{declaration,invariant,lifecycle,compatibility,validation,basis_path} <wp> <id> <value>. Declarations only; never bodies.',
         'Paths only: the finalizer creates every internal reference, hash and version.',
     ]
 
@@ -537,6 +546,24 @@ def _parse_planner(kind, rows):
             if row[1] in works: raise Rejected('duplicate WP form ID: ' + row[1])
             item = _new_wp(row); works[row[1]] = item
             (out['plan']['work_packages'] if full else work_upserts).append(item)
+        elif name == wp_prefix + '_interface':
+            _arity(line, row, 6)
+            if row[1] not in works: raise Rejected('WP interface row precedes/has unknown ID: ' + row[1])
+            specs=works[row[1]].setdefault('interface_specs',[])
+            if any(spec['id']==row[2] for spec in specs): raise Rejected('duplicate WP interface form ID: ' + row[2])
+            specs.append({'id':row[2],'binding':row[3],'language':row[4],'target_path':row[5],
+                          'declarations':[],'invariants':[],'lifecycle':[],'compatibility':[],
+                          'validation':[],'basis_paths':[]})
+        elif name.startswith(wp_prefix + '_interface_'):
+            _arity(line, row, 4)
+            if row[1] not in works: raise Rejected('WP interface child row precedes/has unknown WP: ' + row[1])
+            suffix=name[len(wp_prefix + '_interface_'):]
+            fields={'declaration':'declarations','invariant':'invariants','lifecycle':'lifecycle',
+                    'compatibility':'compatibility','validation':'validation','basis_path':'basis_paths'}
+            if suffix not in fields: raise Rejected(f'unknown planner form row `{name}` at line {line}')
+            spec=next((item for item in works[row[1]].get('interface_specs',[]) if item['id']==row[2]),None)
+            if spec is None: raise Rejected('WP interface child row precedes/has unknown interface ID: ' + row[2])
+            spec[fields[suffix]].append(row[3])
         elif name.startswith(wp_prefix + '_') and name[len(wp_prefix) + 1:] in _WP_CHILDREN:
             _arity(line, row, 3); suffix = name[len(wp_prefix) + 1:]
             if row[1] not in works: raise Rejected('WP child row precedes/has unknown ID: ' + row[1])

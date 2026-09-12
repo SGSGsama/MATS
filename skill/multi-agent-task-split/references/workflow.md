@@ -79,7 +79,7 @@ Two failures have distinct transitions:
 
 Packet retry requires at least one prior immutable binding. Unknown, running, succeeded or missing outcomes are not failed and block retry. The stored packet supplies role, WP and cyber classification; Control supplies no replacement semantics.
 
-Runtime Planner output is `project_patch + plan_patch`. Roles read materialized current state and slices, never Planner patch history.
+Runtime Planner output is `project_patch + plan_patch`. Roles read materialized current state and slices, never Planner patch history. When an Engineering boundary itself is a material architecture decision, Planner may attach `interface_specs` with exact declarations and invariants/lifecycle/compatibility/validation obligations. This is a decision artifact, not product code: routine local design and function bodies remain Engineering work. `required` is exact or yields `plan_conflict`; `advisory` may be adapted with evidence without changing commitments or exit conditions.
 
 ## Dispatch contract
 
@@ -97,7 +97,7 @@ The current workspace snapshot and every other transaction field are intentional
 | Owner -> Control | status, concise summary, evidence paths, unresolved/impact/tags, claims/unknowns, side dispositions | canonical contract, schema, candidate snapshot, path hashes/versions, side binding refs, memo defaults |
 | R1/R2 -> Control | outcome, concise findings, evidence paths, claims/unknowns | schema, exact candidate target, hashes/versions |
 | Luna/Synthesis -> Owner | status, bounded conclusion, evidence paths, unknowns, coverage/actions | schema, evidence hashes/versions, empty coverage exclusions |
-| Planner -> Control | bootstrap semantic target or runtime sparse patch and rationale | canonical contract, mode, schema, base/target versions and pinned project/plan/milestone identities/refs |
+| Planner -> Control | bootstrap semantic target or runtime sparse patch, rationale, and optional architecture-bearing Engineering interface declarations/obligations | canonical contract, mode, schema, base/target versions and pinned project/plan/milestone identities/refs |
 | Owner/R1 -> side role | question/class/findings/attempts/decision/verification plan | schema and evidence identity; R1 may reuse exact candidate evidence without copying it |
 | Native Orca -> Control | none | launch/completion identities and effective binding receipts |
 

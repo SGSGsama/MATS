@@ -125,6 +125,36 @@ class DeterministicSpawn(Base):
         packet=self.g.files.get(self.issue())
         self.assertEqual(packet['work_package']['scope']['refs'],['raw.txt'])
 
+    def test_planner_form_round_trips_exact_engineering_interface_specs(self):
+        spec={'id':'transport','binding':'required','language':'go','target_path':'src/transport.go',
+              'declarations':['type Transport interface {','Send([]byte) error','}'],
+              'invariants':['One datagram becomes one frame.'],'lifecycle':['Close unblocks Send.'],
+              'compatibility':['UDP mode remains available.'],'validation':['Compile assertion passes.'],
+              'basis_paths':['src/main.py']}
+        target=plan();work=target['work_packages'][0];work.update(owner_role='engineering',required_checks=['unit'],scope={'paths':['src'],'refs':[]});work['interface_specs']=[spec]
+        packet={'role':'planner','request':{'reason':'bootstrap'},'project':project(),'plan':target}
+        parsed=parse_form(render_form(packet,prefill={'mode':'full','project':project(),'plan':target,'reason':'design'}),expected_kind='planner_result')
+        self.assertEqual(parsed['plan']['work_packages'][0]['interface_specs'],[spec])
+        patch_packet={'role':'planner','request':{'reason':'project_steer'},'project':project(),'plan':plan()}
+        prefill={'mode':'patch','project_patch':{'set':{},'commitments':{'upsert':[],'remove':[]}},
+                 'plan_patch':{'work_packages':{'upsert':[work],'remove':[]}},'reason':'design'}
+        parsed=parse_form(render_form(patch_packet,prefill=prefill),expected_kind='planner_result')
+        self.assertEqual(parsed['plan_patch']['work_packages']['upsert'][0]['interface_specs'],[spec])
+
+    def test_engineering_packet_carries_interface_specs_once_with_binding_policy(self):
+        spec={'id':'transport','binding':'required','language':'go','target_path':'src/transport.go',
+              'declarations':['type Transport interface {','Send([]byte) error','}'],
+              'invariants':['One datagram becomes one frame.'],'lifecycle':[],
+              'compatibility':[],'validation':['Compile assertion passes.'],'basis_paths':[]}
+        state=self.g.state();work=state['plan']['work_packages'][0]
+        work.update(owner_role='engineering',required_checks=['unit']);work['interface_specs']=[spec];self.g.files.commit(state)
+        packet=self.g.files.get(self.issue())
+        self.assertEqual(packet['work_package']['interface_specs'],[spec])
+        self.assertEqual(packet['interface_contract_policy']['source'],'work_package.interface_specs')
+        self.assertIn('plan_conflict',packet['interface_contract_policy']['required'])
+        self.assertIn('adapt',packet['interface_contract_policy']['advisory'])
+        self.assertEqual(encode(packet).decode().count('type Transport interface'),1)
+
     def test_dependency_packet_projects_accepted_result_without_exposing_raw_result_path_as_input(self):
         state=self.g.state();state['project']['commitments'].append({'id':'C_OTHER','statement':'Only WP3 uses this long unrelated commitment.','scope':'scoped','applies_to':['WP3']})
         next(w for w in state['plan']['work_packages'] if w['id']=='WP3')['depends_on_commitments']=['C_OTHER'];self.g.files.commit(state)
@@ -1741,7 +1771,7 @@ class TaskLayoutValidation(Base):
     def test_current_milestone_layout_is_valid(self):
         from task_validate import validate_task_layout
         report=validate_task_layout(self.repo)
-        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.1.0')
+        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.2.0')
         self.assertNotIn('migration_guide',report)
 
     def test_legacy_top_level_state_is_reported_without_mutation(self):
@@ -2331,7 +2361,12 @@ class ActivationContract(unittest.TestCase):
     def test_planner_role_prioritizes_machine_checklist_and_constrained_repair(self):
         root=ROOT/'skill/multi-agent-task-split/references/roles'
         text=(root/'planner.md').read_text()
-        for needle in ('planner_contract_checklist','repair_of','ownership boundaries','Do not promote invented run counts','never broaden/reset `.task`'):
+        for needle in ('planner_contract_checklist','repair_of','ownership boundaries','Do not promote invented run counts','never broaden/reset `.task`','interface declarations','function bodies'):
+            self.assertIn(needle,text)
+
+    def test_engineering_role_distinguishes_required_and_advisory_interfaces(self):
+        text=(ROOT/'skill/multi-agent-task-split/references/roles/engineering.md').read_text()
+        for needle in ('interface_specs','required','advisory','plan_conflict'):
             self.assertIn(needle,text)
 
     def test_user_installer_is_not_exposed_inside_skill(self):

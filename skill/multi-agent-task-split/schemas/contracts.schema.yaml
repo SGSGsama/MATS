@@ -445,6 +445,71 @@ $defs:
     - coverage
     - proposed_next_actions
     type: object
+  interface_spec:
+    additionalProperties: false
+    properties:
+      id:
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        type: string
+      binding:
+        enum:
+        - required
+        - advisory
+      language:
+        minLength: 1
+        maxLength: 64
+        type: string
+      target_path:
+        minLength: 1
+        type: string
+      declarations:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      invariants:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      lifecycle:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      compatibility:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+      validation:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      basis_paths:
+        items:
+          minLength: 1
+          type: string
+        minItems: 0
+        type: array
+    required:
+    - id
+    - binding
+    - language
+    - target_path
+    - declarations
+    - invariants
+    - lifecycle
+    - compatibility
+    - validation
+    - basis_paths
+    type: object
   work_package:
     additionalProperties: false
     properties:
@@ -475,6 +540,11 @@ $defs:
         - module
         - cross_boundary
         - unknown
+      interface_specs:
+        items:
+          $ref: '#/$defs/interface_spec'
+        minItems: 0
+        type: array
       objective:
         minLength: 1
         type: string

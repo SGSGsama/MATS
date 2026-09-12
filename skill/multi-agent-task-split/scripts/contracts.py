@@ -77,6 +77,8 @@ def planner_contract_checklist(project, plan, request, approved_checks):
             'required_checks may use only approved check IDs supplied below.',
             'required_skills contains only mandatory methodology skills, not ordinary auto-discovered skills.',
             'specialty is descriptive domain identity only; it never changes authority, model, effort, scope, review or acceptance.',
+            'Use interface_specs only on an Engineering WP when an architecture-bearing interface must survive Planner-to-Owner handoff. Include exact declarations and semantic obligations, never function bodies or routine local design.',
+            'A required interface is exact; an incompatible Owner returns plan_conflict. An advisory interface may be adapted with cited evidence while preserving commitments and exit conditions.',
         ],
         'patch_rules': [
             'Bootstrap/full output returns a complete project and complete coarse plan at exactly target_plan_version.',
@@ -121,6 +123,22 @@ def validate_project_plan(project, plan):
                 raise Rejected('worker write scope includes control/Git metadata')
         if w['owner_role'] == 'engineering' and (not w['scope']['paths'] or not w['required_checks']):
             raise Rejected('engineering requires write scope and at least one approved domain check')
+        specs=w.get('interface_specs',[])
+        if specs and w['owner_role']!='engineering':
+            raise Rejected('interface_specs are valid only on Engineering WPs')
+        spec_ids=[spec['id'] for spec in specs]
+        if len(spec_ids)!=len(set(spec_ids)):
+            raise Rejected('duplicate interface spec IDs')
+        for spec in specs:
+            identifier(spec['id']);target=relative(spec['target_path'])
+            if target in {'.task','.git'} or target.startswith(('.task/','.git/')):
+                raise Rejected('interface target includes control/Git metadata')
+            if not any(target==root.rstrip('/') or target.startswith(root.rstrip('/') + '/') for root in w['scope']['paths']):
+                raise Rejected('interface target must be inside WP write scope')
+            for basis in spec['basis_paths']:
+                path=relative(basis)
+                if path in {'.task','.git'} or path.startswith(('.task/','.git/')):
+                    raise Rejected('interface basis includes control/Git metadata')
         for key in ('dependencies','required_checks','depends_on_commitments','scope'):
             if key != 'scope' and len(w[key]) != len(set(w[key])):
                 raise Rejected('duplicate list member: ' + key)

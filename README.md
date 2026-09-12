@@ -2,7 +2,7 @@
 
 MATS (`multi-agent-task-split`) is a Codex Skill for decomposing long-running work, assigning stable roles, and coordinating Orca-managed agents through implementation, review, and acceptance.
 
-Current release: **1.1.0**. MATS uses semantic versioning: the second number is incremented for functional changes, and the third for fixes or small patches. The task-contract schema has its own version (`schema_version: 9`) and is not the product version.
+Current release: **1.2.0**. MATS uses semantic versioning: the second number is incremented for functional changes, and the third for fixes or small patches. The task-contract schema has its own version (`schema_version: 9`) and is not the product version.
 
 ## Setup guide
 
@@ -99,7 +99,7 @@ In Command Prompt or PowerShell:
 %USERPROFILE%\.codex\skills\multi-agent-task-split\bin\mats.cmd doctor
 ```
 
-A healthy installation reports `version: 1.1.0`, `isolated_runtime: true`, and valid policy/operator configuration. `live_orca_verified: false` is normal: `doctor` is intentionally non-mutating and does not start an agent.
+A healthy installation reports `version: 1.2.0`, `isolated_runtime: true`, and valid policy/operator configuration. `live_orca_verified: false` is normal: `doctor` is intentionally non-mutating and does not start an agent.
 
 ## Usage
 
@@ -219,6 +219,8 @@ The fixed policy is defined in [`config/policy.yaml`](skill/multi-agent-task-spl
 ### Task decomposition and authority
 
 Planner creates coarse work packages with dependencies, scope, acceptance checks, an authority role (`research` or `engineering`), and an optional descriptive specialty. Specialty changes domain framing only; it cannot change model choice, permissions, scope, review, or acceptance.
+
+When an Engineering boundary itself is an architecture decision, Planner may add an interface contract containing exact declarations plus invariants, lifecycle, compatibility, and validation obligations. A `required` contract must be implemented exactly or returned as `plan_conflict`; an `advisory` contract may be adapted with evidence. Planner does not write function bodies or routine local implementation. MATS preserves the structure in the generated TSV, materialized plan, packet, and WP contract digest so Engineering reads the decision directly instead of through a prose report.
 
 MATS owns role assignment and routing when another domain Skill proposes a conflicting role structure. Domain Skills still own their specialized method and artifact requirements inside the assigned work package, but cannot widen scope, create managed workers, or bypass review.
 

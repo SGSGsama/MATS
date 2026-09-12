@@ -1,4 +1,4 @@
-# MATS v1.1.0 会话审计与本轮修改总览
+# MATS v1.2.0 会话审计与本轮修改总览
 
 本轮以 `init_export.md`、`engineer-session_1.md`、`control_session_1`、`control_session_2.md`、`control_session_3.md`、`control_4.md` 和现场 `.task/` 为运行证据。目标不是削弱约束，而是把可机械复现的事务工作从模型 I/O 中移走，同时保留足够的角色、路由和恢复约束，防止长任务指令漂移。
 
@@ -309,10 +309,18 @@
 - Control 能从用户文本、控制状态或已验证语义摘要回答时直接回答，不产生 worker I/O，也不自行打开产品源码/原始日志重新取证。只有需要新增领域证据的纯问题才走 `mats query`：它通过 Codex session ID 复用 Research/Engineering Owner，只发送逐字问题和一个固定 answer 路径，不创建 packet、candidate、delivery form 或 fresh init；`mats answer` 校验并发送一条不完成原 Dispatch 的关联回执。每个 WP 同时只允许一个 pending query，相同问题重复调用为幂等；Control wait 核验、确认并清理 tmp 后返回 `OWNER_ANSWER_READY`，Control 必须直接回答用户，不能再次 query/continue。
 - Fresh、普通 `dispatch --continue-owner` 与显式 steer 均明确要求以 `deliver` 和一次 `worker_done` 收束；所有七类 child role 的契约都声明终端自然语言不构成交付。只有脚本标记的 `MATS OWNER QUERY` 使用 answer 回执。这样既不会为一句问答生成候选事务，也不会因无规范回执而把同一问题再问一轮；答案与另一 worker_done 同批到达时延迟到该批结果导入后统一 ack，重放也不再次返回答案。
 
+### 39. v1.2.0 Planner 到 Engineering 的接口决策无损传递
+
+- Engineering WP 新增可选 `interface_specs`。它只用于必须跨 Planner/Owner 边界保真的架构接口，承载精确声明以及 invariant、lifecycle、compatibility、validation 义务；Planner 不写函数体，也不替代 Engineering 做普通局部设计。
+- 每项接口显式标记 `required` 或 `advisory`。Engineering 对 required 项只能精确落实，确实不兼容时返回 `plan_conflict`；advisory 项允许基于证据调整，但不得改变 commitment 或 exit condition。
+- Planner 的 bootstrap/full 与 runtime/patch TSV 均可往返这一结构。MATS 校验接口 ID 唯一、仅属于 Engineering WP、目标路径位于写 scope、basis path 为规范仓库相对路径；模型不手写 YAML、ref 或 hash。
+- Owner/R1/R2 packet 通过 `work_package.interface_specs` 读取同一份声明，另附短小 binding policy，不复制接口正文。接口修改自动进入既有 WP contract digest、计划影响闭包和复审链，不增加状态机、锁、报告字段或迁移分支；旧计划保持合法。
+- 新增角色文本保留自然、确定性的完整句子：Planner 1284 bytes，Engineering 1349 bytes，分别受 1400-byte 专属上限约束；其他 worker 仍为 1250 bytes，fresh init 总预算也未放宽，没有恢复重复 init prompt。
+
 ## 验证口径
 
 - Skill Creator `quick_validate.py`：通过。
-- 完整测试集合：390 项（388 个核心测试：`test_spawn.py` 192 项、其余模块 196 项；另有 2 个独立协议不变量）。新增覆盖七类 child prompt 预算/机械交付声明、跨 WP commitment 与 accepted-result 语义投影、Owner 问答单发/幂等/固定答案、纯答案立即 ack、答案与 worker_done 混合批次延迟 ack 及重放去重、steer 交付提醒；并保留无 active 即返、未交付 settled 阻塞、导入竞态、非阻塞 mail probe、事务 materialize、status/lifecycle 分离和 context-only 释放覆盖。
+- 完整测试集合：396 项（394 个核心测试：`test_spawn.py` 195 项、其余模块 199 项；另有 2 个独立协议不变量）。新增覆盖七类 child prompt 预算/机械交付声明、跨 WP commitment 与 accepted-result 语义投影、Owner 问答单发/幂等/固定答案、纯答案立即 ack、答案与 worker_done 混合批次延迟 ack 及重放去重、steer 交付提醒，以及 interface_specs 的旧计划兼容、角色/路径/ID Guard、full/patch TSV 往返、packet 单份投影和 required/advisory 角色语义；并保留无 active 即返、未交付 settled 阻塞、导入竞态、非阻塞 mail probe、事务 materialize、status/lifecycle 分离和 context-only 释放覆盖。
 - Windows 用户安装/强制替换/隔离运行测试：通过；额外覆盖含空格路径和 unmanaged interpreter 拒绝。
 - 回归覆盖：所有 role finalizer、Planner 嵌套 `scope.refs` 自动 pin、无授权只读证据自动 pin/产品快照隔离/稳定性、详细 oneOf 诊断、local evidence steer、错误事务字段覆盖、同 packet 多 retry binding、evidence manifest、模型投影、bootstrap-init、自动 Control receipt/runtime view/workspace/access、Orca 单次启动恢复、`.task` snapshot 排除、host mode 差异、单 OS mutex、GBK/UTF-8 输出、daybreak-blue 回退、Owner continuity 和小任务权限边界。
 

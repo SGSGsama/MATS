@@ -48,7 +48,7 @@ class UserInstallation(unittest.TestCase):
             )
             self.assertEqual(doctor.returncode, 0, doctor.stdout + doctor.stderr)
             result = yaml.safe_load(doctor.stdout)
-            self.assertEqual(result['version'], '1.1.0')
+            self.assertEqual(result['version'], '1.2.0')
             self.assertTrue(result['isolated_runtime'])
             self.assertTrue(Path(result['yaml_module']).resolve().is_relative_to((installed / '.venv').resolve()))
 

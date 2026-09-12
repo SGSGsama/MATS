@@ -181,7 +181,7 @@ class EngineeringAndIntegrity(Base):
         import dispatchctl
         out=io.StringIO()
         with redirect_stdout(out):rc=dispatchctl.main(['doctor'])
-        self.assertEqual(rc,0);v=parse(out.getvalue().encode());self.assertEqual(v['version'],'1.1.0');self.assertFalse(v['live_orca_verified']);self.assertEqual(v['model_calls'],0)
+        self.assertEqual(rc,0);v=parse(out.getvalue().encode());self.assertEqual(v['version'],'1.2.0');self.assertFalse(v['live_orca_verified']);self.assertEqual(v['model_calls'],0)
     def test_worker_packet_no_root_no_eager_full_schema(self):
         p=hydrate(self.g.files,self.issue());self.assertNotIn('output_schema',p);self.assertIn('schema_on_demand',p);self.assertNotIn('# Multi-Agent Task Split v17',encode(p).decode())
 
@@ -206,8 +206,9 @@ class FootprintAndUsage(unittest.TestCase):
         # Stable Identity/Owns/May/Must-not/Output/Handoff/Refresh recaps are worth
         # a modest budget because they prevent drift across long sessions. Control
         # may use slightly more because it coordinates but does no domain execution.
+        limits={'control.md':1536,'planner.md':1400,'engineering.md':1400}
         for f in (ROOT/'skill/multi-agent-task-split/references/roles').glob('*.md'):
-            self.assertLessEqual(f.stat().st_size,1536 if f.name=='control.md' else 1250,f.name)
+            self.assertLessEqual(f.stat().st_size,limits.get(f.name,1250),f.name)
     def test_no_implicit_invocation(self):self.assertIs(load(ROOT/'skill/multi-agent-task-split/agents/openai.yaml')['policy']['allow_implicit_invocation'],False)
     def test_no_runtime_kernel_or_lease_policy(self):
         sk=ROOT/'skill/multi-agent-task-split';self.assertFalse((sk/'scripts/kernel.py').exists());p=load(sk/'config/policy.yaml');self.assertNotIn('lease_seconds',encode(p).decode());self.assertNotIn('capability_ttl',encode(p).decode())

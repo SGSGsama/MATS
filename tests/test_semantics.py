@@ -6,6 +6,41 @@ from packets import hydrate
 from dispatchctl import main as dispatchctl_main
 
 class StrictContracts(unittest.TestCase):
+    @staticmethod
+    def interface_spec(binding='required',target='src/transport.go',sid='transport'):
+        return {'id':sid,'binding':binding,'language':'go','target_path':target,
+                'declarations':['type Transport interface {','Send([]byte) error','Close() error','}'],
+                'invariants':['Send preserves one input datagram per frame.'],
+                'lifecycle':['Close unblocks pending Send calls.'],
+                'compatibility':['Existing UDP mode remains selectable.'],
+                'validation':['A compile-time implementation assertion and focused tests pass.'],
+                'basis_paths':['src/main.py']}
+
+    def test_engineering_interface_specs_are_optional_but_semantically_bounded(self):
+        validate_project_plan(project(),plan())
+        p=plan();work=p['work_packages'][0];work.update(owner_role='engineering',required_checks=['unit'],scope={'paths':['src'],'refs':[]})
+        work['interface_specs']=[self.interface_spec()]
+        validate_project_plan(project(),p)
+        work['owner_role']='research'
+        with self.assertRaisesRegex(Rejected,'Engineering WPs'):
+            validate_project_plan(project(),p)
+
+    def test_interface_spec_ids_and_target_scope_are_checked(self):
+        p=plan();work=p['work_packages'][0];work.update(owner_role='engineering',required_checks=['unit'],scope={'paths':['src'],'refs':[]})
+        work['interface_specs']=[self.interface_spec(),self.interface_spec(binding='advisory')]
+        with self.assertRaisesRegex(Rejected,'duplicate interface spec IDs'):
+            validate_project_plan(project(),p)
+        work['interface_specs']=[self.interface_spec(target='other/transport.go')]
+        with self.assertRaisesRegex(Rejected,'inside WP write scope'):
+            validate_project_plan(project(),p)
+
+    def test_planner_checklist_defines_interface_contract_boundary(self):
+        value=planner_contract_checklist(project(),plan(),{'reason':'bootstrap'},[])
+        text=' '.join(value['planning_quality']+value['wp_contract'])
+        self.assertIn('architecture-bearing interface',text)
+        self.assertIn('declarations and semantic obligations, never function bodies',text)
+        self.assertIn('required',text);self.assertIn('advisory',text)
+
     def test_wp_specialty_is_separate_from_fixed_authority_role(self):
         w=wp();w['specialty']='security-auditor'
         validate('work_package',w)
