@@ -1,4 +1,4 @@
-# MATS v1.0.2 会话审计与本轮修改总览
+# MATS v1.1.0 会话审计与本轮修改总览
 
 本轮以 `init_export.md`、`engineer-session_1.md`、`control_session_1`、`control_session_2.md`、`control_session_3.md`、`control_4.md` 和现场 `.task/` 为运行证据。目标不是削弱约束，而是把可机械复现的事务工作从模型 I/O 中移走，同时保留足够的角色、路由和恢复约束，防止长任务指令漂移。
 
@@ -302,10 +302,17 @@
 - native boundary 现在只接受上述四字段精确组合或正常 `released`；普通 retained、错 Dispatch ID 或可能执行了其他进程动作仍拒绝。确认后写入原有幂等 lifecycle 记录，runtime view 不再把已释放 MATS authority 的 settled Owner 投影成 writer。
 - 接受结果区分 `owner_dispatch_released`、`owner_session_released` 与 `owner_terminal_retained`：context-only 情况完成 Dispatch 清理和验收，但如实保留用户/Control 预存终端，不虚报关闭 session。
 
+### 38. v1.1.0 fresh prompt、跨角色 payload 与一次性问答优化
+
+- 七类 child 的 fresh Task spec 均新增上限回归。完整首次 Role Contract、角色/WP 优先级、逐字 instructions、精确 packet/delivery 路径、远程证据规则、漂移恢复和机械交付门仍保留；删除的是同一规则在 authority、packet、Aux 小手册和结尾中的重复表述。Owner 的 Luna/evidence 入口改为按需 `-h`，不再内联长操作流程。
+- Owner packet 的 project 只投影全局及当前 WP 相关 commitment；上游 accepted result 由脚本投影 summary、evidence paths、unknowns、impact、tags 和 source memo。不可变 `dependency_bindings` 仍供 Guard 校验，但其原始 result 路径明确不是模型 drill-down 输入，因此 60KiB 级 `snapshot_manifest`、binding/completion/hash 事务不会被下游重复读取。Reviewer candidate、Planner accepted delta、Luna/Synthesis source request 同样维持语义投影测试。
+- Control 能从用户文本、控制状态或已验证语义摘要回答时直接回答，不产生 worker I/O，也不自行打开产品源码/原始日志重新取证。只有需要新增领域证据的纯问题才走 `mats query`：它通过 Codex session ID 复用 Research/Engineering Owner，只发送逐字问题和一个固定 answer 路径，不创建 packet、candidate、delivery form 或 fresh init；`mats answer` 校验并发送一条不完成原 Dispatch 的关联回执。每个 WP 同时只允许一个 pending query，相同问题重复调用为幂等；Control wait 核验、确认并清理 tmp 后返回 `OWNER_ANSWER_READY`，Control 必须直接回答用户，不能再次 query/continue。
+- Fresh、普通 `dispatch --continue-owner` 与显式 steer 均明确要求以 `deliver` 和一次 `worker_done` 收束；所有七类 child role 的契约都声明终端自然语言不构成交付。只有脚本标记的 `MATS OWNER QUERY` 使用 answer 回执。这样既不会为一句问答生成候选事务，也不会因无规范回执而把同一问题再问一轮；答案与另一 worker_done 同批到达时延迟到该批结果导入后统一 ack，重放也不再次返回答案。
+
 ## 验证口径
 
 - Skill Creator `quick_validate.py`：通过。
-- 完整测试集合：383 项，分组运行全部通过（381 个核心测试：`test_spawn.py` 185 项、其余模块 196 项；另有 2 个独立协议不变量）。新增覆盖无 active 即返、未交付 settled 阻塞、失败 context 不续接、导入竞态、新 continuation 优先于旧 blocked source、非阻塞 mail probe/精确领取、纯语义批次一次确认、含完成事件延迟确认、普通 checksum 自动分类、内部 source ref materialize、status/lifecycle 分离、产品版本不得重命名持久化 policy catalog，以及 context-only `no_owned_resource` 释放的精确归一化与 writer authority 清除。
+- 完整测试集合：390 项（388 个核心测试：`test_spawn.py` 192 项、其余模块 196 项；另有 2 个独立协议不变量）。新增覆盖七类 child prompt 预算/机械交付声明、跨 WP commitment 与 accepted-result 语义投影、Owner 问答单发/幂等/固定答案、纯答案立即 ack、答案与 worker_done 混合批次延迟 ack 及重放去重、steer 交付提醒；并保留无 active 即返、未交付 settled 阻塞、导入竞态、非阻塞 mail probe、事务 materialize、status/lifecycle 分离和 context-only 释放覆盖。
 - Windows 用户安装/强制替换/隔离运行测试：通过；额外覆盖含空格路径和 unmanaged interpreter 拒绝。
 - 回归覆盖：所有 role finalizer、Planner 嵌套 `scope.refs` 自动 pin、无授权只读证据自动 pin/产品快照隔离/稳定性、详细 oneOf 诊断、local evidence steer、错误事务字段覆盖、同 packet 多 retry binding、evidence manifest、模型投影、bootstrap-init、自动 Control receipt/runtime view/workspace/access、Orca 单次启动恢复、`.task` snapshot 排除、host mode 差异、单 OS mutex、GBK/UTF-8 输出、daybreak-blue 回退、Owner continuity 和小任务权限边界。
 

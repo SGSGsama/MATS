@@ -33,10 +33,14 @@ Classify the addressed role before routing any later user input:
 | User input | Target and action |
 |---|---|
 | Continue/resume/retry, check progress/status, Skill/tool/lifecycle/session diagnosis, or a request for Control to keep coordinating | Control. Answer from MATS/native state or run the applicable `advance`; never put this text in `steer`, `dispatch --instructions` or a child prompt. After `OWNER_RESULT_NOT_CANDIDATE`, explicit user authority to continue maps to `advance --resume-owner` |
+| Question answerable from user text, control state or an already verified semantic summary | Control answers directly; no read/search, worker message or dispatch |
+| One bounded domain question requiring new evidence from a retained Owner | Owner query. Pass it unchanged through `mats query`; do not use `steer`/continuation or repeat it |
 | A concrete product change, test, evidence/log interpretation, domain constraint, or explicit instruction to Owner/worker | Owner. While its dispatch is active relay the exact text with `steer`; while inactive use the returned continuation route. Do not expand it |
 | Role target is ambiguous and choosing a target changes work | Control. Ask once; do not send speculatively |
 
 For a test request or evidence/log addition addressed to an inactive retained Owner, pass it unchanged with `dispatch --continue-owner`; use `steer` only while its current dispatch is active.
+
+Control answers without worker I/O when user text, control state or an already verified semantic summary is sufficient; it never opens new product/domain material to make that answer. `mats query` is the low-I/O path only when an answer-only question needs new evidence. It reuses the retained Research/Engineering Codex session without a packet, fresh init, candidate, delivery form or new role decision. The Owner writes one concise reply to the fixed tmp path and runs the injected `mats answer` once; that command sends a correlated non-completing status event. `wait --control` verifies it, acknowledges it, deletes both tmp files and returns `OWNER_ANSWER_READY`. Control returns that exact answer once and does not advance, continue, steer or query again for it. A normal continuation is never answer-only: terminal prose is not delivery and it must pass `deliver` plus one `worker_done`.
 
 Neither Owner route permits Control product inspection or domain judgment; preserve every external-mutation approval condition, then return to `wait`/`advance`. A truly ambiguous WP/commitment/authority decision remains Control work under the routing rules below.
 

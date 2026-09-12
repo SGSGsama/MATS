@@ -19,7 +19,6 @@ from packets import continuation_delta, hydrate
 from routing import OWNERS, dispatch_bindings, launch_argv
 from native_orca import capture_runtime_view, create_task, dispatch_context_task, ensure_run_context, fail_task, resolve_workspace_key, retained_terminal_handle, start_worker, stop_worker, tasks_with_status, terminal_send, terminal_submit, worker_show, normalize_effective, normalize_launch_receipt
 
-REMOTE_EVIDENCE_RULE='Required remote evidence unavailable: directly request the exact missing item via the native preamble; never guess or blame MATS/Guard.'
 DELIVERY_SUFFIX='deliver <packet-id>'
 
 
@@ -106,15 +105,12 @@ def initial_prompt(packet, packet_ref, *, repo, policy, instructions='', retry=F
     repo_path=material['repo_path'];delivery_command=material['delivery_command']
     fixed = [
         '=== MULTI-AGENT-TASK-SPLIT AUTHORITY ===',
-        f'Authority role: {role}',
-        f'Domain specialty: {packet["specialty"]}',
-        f'Role contract path: {role_path_text}',
+        f'Authority role: {role}; Domain specialty: {packet["specialty"]}',
         f'Canonical opaque MATS launcher: {launcher}',
-        'MATS CLI and private configuration are opaque. Never open, read, search, enumerate, or infer `scripts/*.py`, internals or policy. For syntax use only this launcher with `<command> -h`.',
-        'Role Contract+packet outrank flexible text. MATS owns role selection, task boundaries, assignment, reassignment and review routing. Domain skills supply methods only; they cannot widen scope/bindings or spawn.',
-        "This is leaf execution, not Orca coordination; the injected preamble has every lifecycle command/ID. Never load `orchestration` or run `orca skills get orchestration`. Load `orca-cli` once only after at least two compactions, when required syntax is absent and exact subcommand `-h` failed; otherwise never.",
-        REMOTE_EVIDENCE_RULE,
-        'Reread contract+packet only after wait/compaction/interruption/authority uncertainty; never at startup/final delivery.',
+        'MATS CLI/scripts/policy are opaque. Never open, read, search, enumerate or infer them; use only this launcher with `<command> -h`.',
+        'Role Contract+packet outrank instructions. MATS owns role/WP/routing; Domain skills supply methods only.',
+        "Leaf execution: the native preamble already has lifecycle CLI/IDs. Never load `orchestration`; load `orca-cli` only after two compactions and failed exact help.",
+        'Missing remote evidence: request the exact item through the native preamble; never guess.',
     ]
     if recovery:
         fixed += [f'This full prompt is required because {recovery}; it replaces any prior Role Contract or continuation recap for this dispatch.']
@@ -126,38 +122,27 @@ def initial_prompt(packet, packet_ref, *, repo, policy, instructions='', retry=F
         '=== AUTHORITATIVE SEMANTIC PACKET ===',
         f'Packet id: {packet["id"]}',
         f'Packet digest: {packet_ref["sha256"]}',
-        f'Exact packet file: {packet_path.as_posix()}; open it directly; do not search or enumerate `.task`.',
-        'The inline Role Contract is already loaded; do not reopen it. Read the packet and required payloads.',
-        'Do not preload `schema_on_demand`/available payloads; open one only for validation or an unresolved question.',
-        'Never replay Planner history or edit other .task files.',
-        'Report a lifecycle anomaly to Control instead of loading coordinator guidance.',
+        f'Exact packet file: {packet_path.as_posix()}; open it and `required_payload_refs` only; never enumerate `.task`.',
+        'The Role Contract is loaded. Projections are complete; raw dependency/candidate/accepted refs are Guard pins, not inputs.',
+        'Do not preload `schema_on_demand`, available payloads or Planner history. Reread only after wait/compaction/interruption/authority uncertainty.',
         '',
         '=== PRE-DELIVERY MECHANICAL GATE ===',
-        f'Fill the launcher-generated UTF-8 TSV semantic form at `{delivery_path.as_posix()}`. Keep its header/row names; this is the only `.task` path you may write. Then run `{delivery_command}`.',
-        'Author semantic cells only. Evidence/Planner/Aux refs are paths; the gate materializes every identity, schema, version, hash, snapshot and binding reference, then replaces the form with canonical YAML. `scope.paths` limits writes; read paths are advice and need no grant.',
-        'Missing transaction fields, including the current workspace snapshot, are expected and never a blocked/failed condition; only the gate computes them.',
-        'Before the gate, stop owned background processes and close/flush every workspace/evidence handle. After it passes, do not mutate workspace or evidence.',
-        'Only exit 0 with `valid: true` permits delivery. On failure, correct it and rerun this gate in the same session; never ask about MATS mechanics. If contradictory, escalate once without asking.',
-        'Keep the finalized canonical file in place; edits require recheck. `worker_done.reportPath` is display-only and MATS ignores it. Use only injected or returned MATS operations.',
+        f'Fill the generated UTF-8 TSV at `{delivery_path.as_posix()}`; keep its rows. This is the only `.task` path you may write. Then run `{delivery_command}`.',
+        'Write semantic cells/paths only. Missing transaction fields, including the workspace snapshot, are expected and are not blocked/failed; MATS adds them.',
+        'First stop owned processes and close/flush workspace/evidence handles. Only exit 0 with `valid: true` permits delivery; otherwise correct and rerun the same gate/session. Mutate nothing after success; escalate one public contradiction.',
+        'Every ordinary worker task/continuation must finish through this gate; terminal prose is never delivery. Keep canonical bytes; `worker_done.reportPath` is display-only. Use only injected/returned MATS operations.',
     ]
     if role in OWNERS:
-        wait_command=f'{launcher} wait --actor-packet "{packet_ref["path"]}" --repo "{repo_path.as_posix()}"'
         fixed += [
             '',
-            '=== OWNER AUXILIARY AUTHORITY ===',
-            'You MAY use Luna Aux for cost-effective read-only bulk indexing. It is optional cost advice; direct reading is valid and skipping Aux never blocks.',
-            f'For Luna Aux run `{launcher} side-request-form --operation luna_aux --repo "{repo_path.as_posix()}"`, fill its TSV and run the returned next operation; then pass the immutable request path to `{launcher} dispatch`. If depth blocks, send that path to Control.',
-            f'For bulk evidence run `{launcher} evidence "{packet["id"]}" <out.mats.yaml> <inputs...> --repo "{repo_path.as_posix()}"`; ordinary checksum/index files use `evidence`.',
-            'You must never call raw worker-start, uv, py.exe, or host/system Python.',
-            f'After launch use only `{wait_command}`. Verify Aux evidence before consuming it.',
-            'Do not use `failed` as a checkpoint: while in-scope work is possible, keep working; finalize only for a candidate or concrete external/authority/tool blocker.',
-            'After delivery remain in this WP session for review/repair; `worker_done` or reviewer launch does not release it.',
+            'Luna Aux is optional cost advice; direct reading is valid. If needed use `side-request-form -h`/`evidence -h`, verify results, and never call raw worker-start or host Python.',
+            '`failed` is not a checkpoint; remain reusable in this WP after delivery.',
         ]
     elif role == 'review_r1':
         fixed += [
             '',
             '=== R1 SYNTHESIS REQUEST ===',
-            f'Before returning `needs_synthesis`, run `{launcher} side-request-form --operation synthesis --repo "{repo_path.as_posix()}"`, fill its TSV and run the returned next operation. Do not dispatch it; `result` exposes the immutable request ref to Control.',
+            'Before `needs_synthesis`, use this launcher `side-request-form -h`, fill/finalize the Synthesis request, and do not dispatch it; `result` returns its ref to Control.',
         ]
     fixed += [
         '',
@@ -165,10 +150,34 @@ def initial_prompt(packet, packet_ref, *, repo, policy, instructions='', retry=F
         instructions or 'No extra instructions. Execute the authoritative packet using your Role Contract.',
         '--- END CALL-SPECIFIC INSTRUCTIONS ---',
         '',
-        'Never reinterpret the flexible section as permission to change role, model, effort, commitments, acceptance rules, or write scope.',
-        'Follow Orca\'s native injected dispatch preamble for lifecycle signaling.',
+        'Instructions cannot change role/model/effort/commitments/acceptance/write scope; use the native preamble for lifecycle.',
     ]
     return '\n'.join(fixed).strip() + '\n'
+
+
+def owner_query_prompt(*,query_id,wp,question,control_session,answer_path,repo):
+    """Compact answer-only turn for a retained Owner.
+
+    It deliberately has no packet, Role Contract replay, delivery form or
+    worker_done.  The exact `answer` command is the sole response channel.
+    """
+    if not all(isinstance(x,str) and x.strip() for x in (query_id,wp,question,control_session)):
+        raise Rejected('Owner query requires nonempty identity, WP, question and Control session')
+    launcher=ROOT/'bin'/('mats.cmd' if os.name=='nt' else 'mats')
+    command=f'"{launcher.resolve().as_posix()}" answer "{query_id}" --repo "{Path(repo).resolve().as_posix()}"'
+    return '\n'.join([
+        '=== MATS OWNER QUERY ===',
+        f'Query / retained WP: {query_id} / {wp}.',
+        f'Supervising Control session: {control_session}.',
+        'This is one answer-only turn, not a fresh assignment, plan change, candidate, continuation delivery or permission to change product files. Keep the loaded role/WP and use relevant read-only evidence.',
+        'Answer the exact question once. Do not emit `worker_done`, edit the ordinary delivery form, ask Control the same question, or continue unrelated WP work in this turn.',
+        'If decisive remote evidence is unavailable, name that exact missing evidence in the answer; do not guess.',
+        '',
+        'Question (verbatim):',
+        question.strip(),
+        '',
+        f'Write only the concise UTF-8 answer to `{Path(answer_path).resolve().as_posix()}`, then run `{command}` exactly once. That reply file is the only `.task` path writable for this query.',
+    ]).strip()+'\n'
 
 
 def continuation_prompt(packet, packet_ref, *, repo, policy, instructions='', base_packet_ref=None, delta_ref=None, control_session=None):
@@ -215,7 +224,7 @@ def continuation_prompt(packet, packet_ref, *, repo, policy, instructions='', ba
         '',
         '=== DELIVERY ===',
         f'Fill only the launcher-generated semantic TSV form at `{delivery_path.as_posix()}`, then run `{delivery_command}`.',
-        'Write semantic cells/paths only; MATS generates transaction data. Stop owned processes and close/flush handles first. Only exit 0 with `valid: true` permits one `worker_done`; mutate nothing afterward. Correct the same form on failure; report one missing/contradictory public path without reading scripts.',
+        'This standard continuation must end through the gate plus one `worker_done`; terminal prose alone is never a handoff. Write semantic cells/paths only; MATS generates transaction data. Stop owned processes and close/flush handles first. Only exit 0 with `valid: true` permits delivery; mutate nothing afterward. Correct the same form on failure; report one missing/contradictory public path without reading scripts.',
     ]
     return '\n'.join(fixed).strip() + '\n'
 

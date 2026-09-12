@@ -181,7 +181,7 @@ class EngineeringAndIntegrity(Base):
         import dispatchctl
         out=io.StringIO()
         with redirect_stdout(out):rc=dispatchctl.main(['doctor'])
-        self.assertEqual(rc,0);v=parse(out.getvalue().encode());self.assertEqual(v['version'],'1.0.2');self.assertFalse(v['live_orca_verified']);self.assertEqual(v['model_calls'],0)
+        self.assertEqual(rc,0);v=parse(out.getvalue().encode());self.assertEqual(v['version'],'1.1.0');self.assertFalse(v['live_orca_verified']);self.assertEqual(v['model_calls'],0)
     def test_worker_packet_no_root_no_eager_full_schema(self):
         p=hydrate(self.g.files,self.issue());self.assertNotIn('output_schema',p);self.assertIn('schema_on_demand',p);self.assertNotIn('# Multi-Agent Task Split v17',encode(p).decode())
 

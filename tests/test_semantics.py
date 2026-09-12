@@ -331,7 +331,8 @@ class PlanningAndConcurrency(Base):
     def test_raw_directive_preserved(self):
         raw='Keep exactly this text:\nDo NOT deploy.\n';self.g.directive({'id':'U','raw_text':raw,'intent':'project_steer'});pk=self.issue('planner',None,{'reason':'project_steer','question':'Apply user steering','source_refs':[],'directive_ids':['U'],'affected_wp_ids':[]});self.assertEqual(hydrate(self.g.files,pk)['directives'][0]['raw_text'],raw)
     def test_planner_packet_contains_since_delta(self):
-        cref=self.accepted();pk=self.issue('planner',None,{'reason':'milestone_audit','question':'Review accepted impact','source_refs':[cref],'directive_ids':[],'affected_wp_ids':['WP1']});p=hydrate(self.g.files,pk);self.assertNotIn('accepted_delta',p);self.assertNotIn('architecture_api_paths',p['since_last_planner']);self.assertIn('changed_paths',p['since_last_planner']);allp=hydrate(self.g.files,pk,include_available=True);self.assertEqual(allp['accepted_delta'][0]['wp_id'],'WP1')
+        cref=self.accepted();pk=self.issue('planner',None,{'reason':'milestone_audit','question':'Review accepted impact','source_refs':[cref],'directive_ids':[],'affected_wp_ids':['WP1']});p=hydrate(self.g.files,pk);self.assertNotIn('accepted_delta',p);self.assertNotIn('architecture_api_paths',p['since_last_planner']);self.assertIn('changed_paths',p['since_last_planner']);allp=hydrate(self.g.files,pk,include_available=True);delta=allp['accepted_delta'][0];self.assertEqual(delta['wp_id'],'WP1')
+        for field in ('snapshot_manifest','binding_ref','completion','snapshot','evidence'):self.assertNotIn(field,delta['source_result'])
     def test_large_planner_payload_lossless(self):
         with self.g.files.lock():
             s=self.g.state();s['project']['open_questions']=['X'*140000];self.g.files.commit(s)

@@ -21,19 +21,19 @@ class DeterministicSpawn(Base):
         self.assertEqual(out['role'],'research')
         self.assertEqual(out['expected_binding'],{'model':'gpt-5.6-terra','reasoning_effort':'high'})
         self.assertIn('ROLE CONTRACT (FULL FIRST/FRESH-LAUNCH INLINE COPY)',out['prompt'])
-        self.assertIn('references/roles/research.md',out['prompt'])
+        self.assertTrue(self.g.files.get(out['packet_ref'])['role_contract_path'].endswith('references/roles/research.md'))
         self.assertIn('Canonical opaque MATS launcher:',out['prompt'])
         self.assertIn('bin/mats',out['prompt'])
         self.assertNotIn('Skill-local venv Python path:',out['prompt'])
         self.assertNotIn('MATS script path:',out['prompt'])
         self.assertNotIn('scripts/mats.py',out['prompt'])
-        self.assertIn('Never open, read, search, enumerate, or infer `scripts/*.py`',out['prompt'])
+        self.assertIn('Never open, read, search, enumerate or infer them',out['prompt'])
         self.assertIn('use only this launcher with `<command> -h`',out['prompt'])
         self.assertIn('Focus on protocol state transitions.',out['prompt'])
         self.assertIn('Domain specialty: domain-research',out['prompt'])
-        self.assertIn('You MAY use Luna Aux',out['prompt'])
+        self.assertIn('Luna Aux is optional cost advice',out['prompt'])
         self.assertIn('optional cost advice',out['prompt'])
-        self.assertIn('never call raw worker-start, uv, py.exe, or host/system Python',out['prompt'])
+        self.assertIn('never call raw worker-start or host Python',out['prompt'])
         self.assertIn('read relevant sources without a scope grant',out['prompt'])
         packet=self.g.files.get(out['packet_ref'])
         self.assertIn('r2_tag_policy',packet)
@@ -67,38 +67,50 @@ class DeterministicSpawn(Base):
                            'delivery_validation':{'kind':output_contract,'command_suffix':'deliver <packet-id>','required_before':['native_report','worker_done'],'success':{'exit_code':0,'valid':True},'failure_action':'correct_and_rerun_same_session','exact_bytes_required':True}})
             text=initial_prompt(packet,pref,repo=self.repo,policy=self.g.policy())
             with self.subTest(role=role):
-                self.assertIn('MATS CLI and private configuration are opaque',text)
-                self.assertIn('Never open, read, search, enumerate, or infer `scripts/*.py`',text)
+                self.assertIn('MATS CLI/scripts/policy are opaque',text)
+                self.assertIn('Never open, read, search, enumerate or infer them',text)
                 self.assertNotIn('scripts/mats.py',text)
                 self.assertNotIn('.venv',text)
                 self.assertIn('bin/mats',text)
                 self.assertIn('PRE-DELIVERY MECHANICAL GATE',text)
                 self.assertIn(' deliver ',text)
-                self.assertIn('current workspace snapshot, are expected and never a blocked/failed condition',text)
-                self.assertIn('stop owned background processes and close/flush every workspace/evidence handle',text)
+                self.assertIn('workspace snapshot, are expected and are not blocked/failed',text)
+                self.assertIn('stop owned processes and close/flush workspace/evidence handles',text)
                 self.assertIn(pref['sha256'],text)
-                self.assertIn('correct it and rerun this gate in the same session',text)
-                self.assertIn('`worker_done.reportPath` is display-only and MATS ignores it',text)
-                self.assertIn('Use only injected or returned MATS operations',text)
-                self.assertIn('This is leaf execution, not Orca coordination',text)
-                self.assertIn('injected preamble has every lifecycle command/ID',text)
-                self.assertIn('Never load `orchestration` or run `orca skills get orchestration`',text)
-                self.assertIn('Load `orca-cli` once only after at least two compactions',text)
-                self.assertIn('exact subcommand `-h` failed; otherwise never',text)
-                self.assertIn('Required remote evidence unavailable: directly request the exact missing item via the native preamble',text)
+                self.assertIn('correct and rerun the same gate/session',text)
+                self.assertIn('Every ordinary worker task/continuation must finish through this gate',text)
+                self.assertIn('terminal prose is never delivery',text)
+                self.assertIn('`worker_done.reportPath` is display-only',text)
+                self.assertIn('Use only injected/returned MATS operations',text)
+                self.assertIn('Leaf execution:',text)
+                self.assertIn('native preamble already has lifecycle CLI/IDs',text)
+                self.assertIn('Never load `orchestration`',text)
+                self.assertIn('load `orca-cli` only after two compactions',text)
+                self.assertIn('failed exact help',text)
+                self.assertIn('Missing remote evidence: request the exact item through the native preamble',text)
                 self.assertNotIn('load its guide only for anomalies',text)
-                limits={'research':6600,'engineering':6600,'review_r1':6000,'review_r2':5600,
-                        'planner':5600,'luna_aux':5400,'synthesis':5400}
+                limits={'research':4500,'engineering':4500,'review_r1':4300,'review_r2':4100,
+                        'planner':4200,'luna_aux':4000,'synthesis':4000}
                 self.assertLessEqual(len(text),limits[role])
+
+    def test_fresh_prompt_keeps_each_authority_once_without_aux_manual_repetition(self):
+        pref=self.issue();packet=self.g.files.get(pref);text=initial_prompt(packet,pref,repo=self.repo,policy=self.g.policy())
+        contract=(ROOT/'skill/multi-agent-task-split/references/roles/research.md').read_text().strip()
+        self.assertEqual(text.count(contract),1)
+        self.assertEqual(text.count('Missing remote evidence:'),1)
+        self.assertEqual(text.count('side-request-form'),1)
+        self.assertNotIn('OWNER AUXILIARY AUTHORITY',text)
+        self.assertIn('use only this launcher with `<command> -h`',text)
+        self.assertIn('ordinary worker task/continuation must finish through this gate',text)
 
     def test_packet_itself_forbids_worker_script_inspection(self):
         packet=self.g.files.get(self.issue())
-        self.assertIn('MATS CLI and private configuration are opaque',packet['boundary'])
-        self.assertIn('Never open, read, search, enumerate, or infer scripts/*.py',packet['boundary'])
+        self.assertIn('MATS scripts/policy are opaque',packet['boundary'])
         self.assertIn('use the injected launcher with <command> -h',packet['boundary'])
-        self.assertIn('leaf execution, not Orca coordination',packet['boundary'])
-        self.assertIn('Never load orchestration',packet['boundary'])
-        self.assertIn('Orca-cli is a one-time last syntax fallback only after at least two compactions',packet['boundary'])
+        self.assertIn('leaf execution',packet['boundary'])
+        self.assertIn('never load orchestration',packet['boundary'])
+        self.assertIn('orca-cli is last-resort syntax help only after two compactions',packet['boundary'])
+        self.assertIn('dependency_bindings/candidate_ref/accepted_bindings are Guard pins',packet['boundary'])
         self.assertEqual(packet['delivery_validation'],{
             'kind':'result',
             'command_suffix':'deliver <packet-id>',
@@ -112,6 +124,22 @@ class DeterministicSpawn(Base):
         state=self.g.state();state['plan']['work_packages'][0]['scope']['refs']=[self.evidence()[0]];self.g.files.commit(state)
         packet=self.g.files.get(self.issue())
         self.assertEqual(packet['work_package']['scope']['refs'],['raw.txt'])
+
+    def test_dependency_packet_projects_accepted_result_without_exposing_raw_result_path_as_input(self):
+        state=self.g.state();state['project']['commitments'].append({'id':'C_OTHER','statement':'Only WP3 uses this long unrelated commitment.','scope':'scoped','applies_to':['WP3']})
+        next(w for w in state['plan']['work_packages'] if w['id']=='WP3')['depends_on_commitments']=['C_OTHER'];self.g.files.commit(state)
+        accepted=self.accepted('WP1');packet_ref=self.issue(wid='WP2');packet=hydrate(self.g.files,packet_ref)
+        self.assertEqual(packet['project_projection'],'global_and_current_wp_commitments')
+        self.assertEqual([item['id'] for item in packet['project']['commitments']],['C1'])
+        self.assertEqual(packet['dependency_bindings']['WP1'],accepted)
+        upstream=packet['upstream'][0]
+        self.assertEqual(upstream['wp_id'],'WP1')
+        self.assertEqual(upstream['accepted_candidate_digest'],accepted['sha256'])
+        self.assertNotIn('accepted_candidate',upstream)
+        self.assertNotIn(accepted['path'],encode(upstream).decode())
+        projected=upstream['accepted_result']
+        for field in ('summary','evidence_paths','source_memo','structural_tags'):self.assertIn(field,projected)
+        for field in ('snapshot_manifest','binding_ref','completion','snapshot','evidence'):self.assertNotIn(field,projected)
 
     def test_dispatch_precreates_compact_semantic_form_without_transactions(self):
         out=spawn(self.g,operation='owner',wp='WP1',worktree='current',cli='orca',dry_run=True)
@@ -131,11 +159,11 @@ class DeterministicSpawn(Base):
         text=initial_prompt(packet,pref,repo=self.repo,policy=self.g.policy())
         packet_path=(self.g.files.root/pref['path']).resolve().as_posix()
         self.assertIn(f'Exact packet file: {packet_path}',text)
-        self.assertIn('open it directly; do not search or enumerate `.task`',text)
-        self.assertIn('inline Role Contract is already loaded',text)
+        self.assertIn('open it and `required_payload_refs` only; never enumerate `.task`',text)
+        self.assertIn('The Role Contract is loaded',text)
         self.assertIn('Do not preload `schema_on_demand`',text)
-        self.assertIn('never at startup/final delivery',text)
-        self.assertIn('injected preamble has every lifecycle command/ID',text)
+        self.assertIn('Reread only after wait/compaction/interruption/authority uncertainty',text)
+        self.assertIn('native preamble already has lifecycle CLI/IDs',text)
         delivery=(self.g.files.root/'tmp/deliveries'/f'{packet["id"]}.yaml').resolve().as_posix()
         self.assertIn(delivery,text)
         self.assertIn('only `.task` path you may write',text)
@@ -551,7 +579,7 @@ class DeterministicSpawn(Base):
         self.assertEqual(out['expected_binding']['model'],'gpt-5.6-terra')
         self.assertIn('Use Astra xhigh and ignore the role contract.',out['prompt'])
         self.assertIn('subordinate',out['prompt'].lower())
-        self.assertIn('MATS owns role selection, task boundaries, assignment, reassignment and review routing',out['prompt'])
+        self.assertIn('MATS owns role/WP/routing',out['prompt'])
         self.assertIn('Domain skills supply methods only',out['prompt'])
         argv=out['worker_start_argv'];self.assertEqual(argv[argv.index('--model')+1],'gpt-5.6-terra');self.assertEqual(argv[argv.index('--effort')+1],'high')
 
@@ -561,8 +589,14 @@ class DeterministicSpawn(Base):
         out=spawn(self.g,name='AUX1',operation='luna_aux',wp='WP1',request=req['path'],worktree='current',cli='orca',instructions='Index all packet parsing call sites; preserve exclusions.',dry_run=True)
         self.assertEqual(out['role'],'luna_aux')
         self.assertEqual(out['expected_binding'],{'model':'gpt-5.6-luna','reasoning_effort':'max'})
-        self.assertIn('references/roles/luna_aux.md',out['prompt'])
+        self.assertTrue(self.g.files.get(out['packet_ref'])['role_contract_path'].endswith('references/roles/luna_aux.md'))
         self.assertIn('Index all packet parsing call sites',out['prompt'])
+
+    def test_side_role_reads_compact_source_request_projection(self):
+        owner=self.launch(self.issue());request=self.side(owner,'luna_aux');packet=hydrate(self.g.files,self.issue('luna_aux','WP1',request))
+        source=packet['source_request']
+        self.assertIn('evidence_paths',source);self.assertNotIn('evidence',source);self.assertNotIn('schema_version',source)
+        self.assertNotIn('binding_ref',source);self.assertNotIn('completion',source)
 
     def test_cyber_synthesis_uses_daybreak_blue_with_sol_fallback(self):
         owner=self.launch(self.issue());req=self.side(owner,'synthesis')
@@ -661,6 +695,8 @@ class DeterministicSpawn(Base):
         self.assertEqual(out['prompt_mode'],'compact_continuation')
         self.assertIn('MATS SAME-OWNER CONTINUATION',out['prompt'])
         self.assertIn('Address the R1 findings.',out['prompt'])
+        self.assertIn('standard continuation must end through the gate plus one `worker_done`',out['prompt'])
+        self.assertIn('terminal prose alone is never a handoff',out['prompt'])
 
     def test_continue_owner_references_small_script_generated_delta_not_full_packet(self):
         prior=self.launch(self.issue());self.candidate(b=prior);receipt=self.g.files.get(prior)['receipt']
@@ -796,6 +832,126 @@ class DeterministicSpawn(Base):
         self.assertEqual(send.call_args.kwargs['session_id'],receipt['session_id'])
         self.assertEqual(send.call_args.kwargs['workspace_key'],receipt['workspace_key'])
         self.assertEqual(self.g.files.all('packets'),before)
+
+    def test_query_owner_sends_one_answer_only_turn_and_deduplicates_the_pending_question(self):
+        from mats import main
+        owner=self.launch(self.issue(),session='SQUERY');self.candidate(b=owner)
+        question='What exact observation explains the current behavior?'
+        sent=io.StringIO()
+        with (patch('mats.ensure_run_context',return_value={'action':'already_bound','run_id':'RUN'}),
+              patch('mats.retained_terminal_handle',return_value=('TERM-QUERY',{'ok':True})),
+              patch('mats.terminal_send',return_value={'ok':True}) as send,
+              patch('mats.terminal_submit',return_value={'ok':True}) as submit,
+              contextlib.redirect_stdout(sent)):
+            self.assertEqual(main(['query','--repo',str(self.repo),'--wp','WP1','--question',question]),0)
+        value=parse(sent.getvalue().encode());self.assertEqual(value['reason_code'],'OWNER_QUERY_SENT')
+        self.assertEqual(value['next_operation'],{'command':'wait','actor':'control'})
+        prompt=send.call_args.args[2]
+        self.assertEqual(prompt.count(question),1);self.assertIn('MATS OWNER QUERY',prompt)
+        self.assertIn('answer-only',prompt);self.assertIn('mats',prompt);self.assertIn(' answer ',prompt)
+        self.assertNotIn('ROLE CONTRACT (FULL FIRST/FRESH-LAUNCH INLINE COPY)',prompt)
+        self.assertEqual(prompt.count('worker_done'),1);self.assertIn('Do not emit `worker_done`',prompt);submit.assert_called_once_with('orca','TERM-QUERY')
+        query_id=value['query_id'];record=load(self.g.files.owner_query_path(query_id))
+        self.assertEqual(record['status'],'pending');self.assertEqual(record['question'],question)
+
+        repeated=io.StringIO()
+        with patch('mats.terminal_send') as duplicate,contextlib.redirect_stdout(repeated):
+            self.assertEqual(main(['query','--repo',str(self.repo),'--wp','WP1','--question',question]),0)
+        self.assertEqual(parse(repeated.getvalue().encode())['reason_code'],'OWNER_QUERY_ALREADY_PENDING')
+        duplicate.assert_not_called()
+
+    def test_owner_answer_is_single_send_and_control_wait_returns_it_without_requery(self):
+        from mats import main
+        owner=self.launch(self.issue(),session='SQUERY');self.candidate(b=owner);question='State the decisive finding.'
+        queried=io.StringIO()
+        native_common=(patch('mats.ensure_run_context',return_value={'action':'already_bound','run_id':'RUN'}),
+                       patch('mats.retained_terminal_handle',return_value=('TERM-QUERY',{'ok':True})),
+                       patch('mats.terminal_send',return_value={'ok':True}),patch('mats.terminal_submit',return_value={'ok':True}))
+        with native_common[0],native_common[1],native_common[2],native_common[3],contextlib.redirect_stdout(queried):
+            self.assertEqual(main(['query','--repo',str(self.repo),'--wp','WP1','--question',question]),0)
+        query_id=parse(queried.getvalue().encode())['query_id'];answer='The decisive finding is the exact framed-byte mismatch.'
+        answer_path=self.g.files.owner_answer_path(query_id,create=True);answer_path.write_text(answer,encoding='utf-8')
+        answered=io.StringIO()
+        with (patch('mats.ensure_run_context',return_value={'action':'already_bound','run_id':'RUN'}),
+              patch('mats.retained_terminal_handle',return_value=('TERM-QUERY',{'ok':True})),
+              patch('mats.send_owner_answer',return_value={'ok':True}) as send,
+              contextlib.redirect_stdout(answered)):
+            self.assertEqual(main(['answer',query_id,'--repo',str(self.repo)]),0)
+        self.assertEqual(parse(answered.getvalue().encode())['reason_code'],'OWNER_ANSWER_SENT')
+        self.assertEqual(send.call_args.kwargs['answer'],answer)
+        duplicate=io.StringIO()
+        with patch('mats.send_owner_answer') as second,contextlib.redirect_stdout(duplicate):
+            self.assertEqual(main(['answer',query_id,'--repo',str(self.repo)]),0)
+        self.assertEqual(parse(duplicate.getvalue().encode())['reason_code'],'OWNER_ANSWER_ALREADY_SENT');second.assert_not_called()
+
+        message={'type':'status','subject':f'MATS owner answer {query_id}','body':answer,'run_id':'RUN'}
+        native={'mode':'event_driven','timeout_ms':1_200_000,'status':'events','messages':[message],
+                'native_receipt':{'ok':True,'result':{'deliveryId':'DELIVERY-ANSWER'}},'note':'events'}
+        waited=io.StringIO()
+        with (patch('mats.capture_runtime_view',return_value=(self.view(),self.repo/'.task/tmp/runtime-view.yaml')),
+              patch('mats.wait_events',return_value=native) as wait,
+              patch('mats.acknowledge_events',return_value={'ok':True}) as ack,
+              contextlib.redirect_stdout(waited)):
+            self.assertEqual(main(['wait','--control','--repo',str(self.repo)]),0)
+        result=parse(waited.getvalue().encode());self.assertEqual(result['reason_code'],'OWNER_ANSWER_READY')
+        self.assertEqual(result['owner_answers'],[{'query_id':query_id,'wp':'WP1','answer':answer}])
+        self.assertFalse(self.g.files.owner_query_path(query_id).exists());self.assertFalse(answer_path.exists())
+        wait.assert_called_once_with('orca',timeout_ms=1_200_000,include_status=True)
+        ack.assert_called_once_with('orca','DELIVERY-ANSWER')
+
+    def test_owner_answer_mixed_with_worker_done_uses_the_batches_single_deferred_ack(self):
+        from mats import main
+        import dispatchctl,json,copy
+        owner=self.launch(self.issue(),session='SQUERY-MIXED');self.candidate(b=owner)
+        queried=io.StringIO()
+        with (patch('mats.ensure_run_context',return_value={'action':'already_bound','run_id':'RUN'}),
+              patch('mats.retained_terminal_handle',return_value=('TERM-QUERY',{'ok':True})),
+              patch('mats.terminal_send',return_value={'ok':True}),
+              patch('mats.terminal_submit',return_value={'ok':True}),
+              contextlib.redirect_stdout(queried)):
+            self.assertEqual(main(['query','--repo',str(self.repo),'--wp','WP1','--question','Give one exact finding.']),0)
+        query_id=parse(queried.getvalue().encode())['query_id'];answer='One exact answer.'
+        answer_path=self.g.files.owner_answer_path(query_id,create=True);answer_path.write_text(answer,encoding='utf-8')
+        with (patch('mats.ensure_run_context',return_value={'action':'already_bound','run_id':'RUN'}),
+              patch('mats.retained_terminal_handle',return_value=('TERM-QUERY',{'ok':True})),
+              patch('mats.send_owner_answer',return_value={'ok':True}),contextlib.redirect_stdout(io.StringIO())):
+            self.assertEqual(main(['answer',query_id,'--repo',str(self.repo)]),0)
+
+        work_binding=self.launch(self.issue(wid='WP3'));bound=self.g.files.get(work_binding);packet=self.g.files.get(bound['packet_ref'])
+        self.g.files.delivery_path(packet['id'],create=True).write_bytes(encode(self.result(work_binding)))
+        dispatch_id=bound['receipt']['dispatch_id']
+        messages=[
+            {'type':'status','subject':f'MATS owner answer {query_id}','body':answer,'run_id':'RUN'},
+            {'type':'worker_done','delivery_contract':'current_delivery','id':'MSG-MIXED','run_id':'RUN',
+             'payload':json.dumps({'taskId':bound['receipt']['task_id'],'dispatchId':dispatch_id,'outcome':'succeeded'})},
+        ]
+        native={'mode':'event_driven','timeout_ms':1_200_000,'status':'events','messages':messages,
+                'native_receipt':{'ok':True,'result':{'deliveryId':'DELIVERY-MIXED'}},'note':'events'}
+        waited=io.StringIO()
+        with (patch('mats.capture_runtime_view',return_value=(self.view(),self.repo/'.task/tmp/runtime-view.yaml')),
+              patch('mats.wait_events',return_value=copy.deepcopy(native)),patch('mats.acknowledge_events') as early_ack,
+              contextlib.redirect_stdout(waited)):
+            self.assertEqual(main(['wait','--control','--repo',str(self.repo)]),0)
+        result=parse(waited.getvalue().encode());early_ack.assert_not_called()
+        self.assertEqual(result['owner_answers'],[{'query_id':query_id,'wp':'WP1','answer':answer}])
+        self.assertEqual(result['ready_results'],[{'dispatch_id':dispatch_id,'next_operation':{'command':'result','binding_ref':dispatch_id}}])
+        self.assertTrue(self.g.files.owner_query_path(query_id).exists())
+        self.assertEqual(load(self.g.files.owner_query_path(query_id))['received_delivery_id'],'DELIVERY-MIXED')
+
+        replayed=io.StringIO()
+        with (patch('mats.capture_runtime_view',return_value=(self.view(),self.repo/'.task/tmp/runtime-view.yaml')),
+              patch('mats.wait_events',return_value=copy.deepcopy(native)),patch('mats.acknowledge_events') as replay_ack,
+              contextlib.redirect_stdout(replayed)):
+            self.assertEqual(main(['wait','--control','--repo',str(self.repo)]),0)
+        replay=parse(replayed.getvalue().encode());replay_ack.assert_not_called()
+        self.assertNotIn('owner_answers',replay);self.assertNotEqual(replay.get('reason_code'),'OWNER_ANSWER_READY')
+        self.assertEqual(replay['ready_results'],result['ready_results'])
+
+        with (patch('dispatchctl.acknowledge_events',return_value={'ok':True}) as ack,
+              contextlib.redirect_stdout(io.StringIO())):
+            self.assertEqual(dispatchctl.main(['--repo',str(self.repo),'result',dispatch_id]),0)
+        ack.assert_called_once_with('orca','DELIVERY-MIXED')
+        self.assertFalse(self.g.files.owner_query_path(query_id).exists());self.assertFalse(answer_path.exists())
 
     def test_r2_worker_done_import_is_acknowledged_from_reviews_collection(self):
         from mats import main
@@ -1585,7 +1741,7 @@ class TaskLayoutValidation(Base):
     def test_current_milestone_layout_is_valid(self):
         from task_validate import validate_task_layout
         report=validate_task_layout(self.repo)
-        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.0.2')
+        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.1.0')
         self.assertNotIn('migration_guide',report)
 
     def test_legacy_top_level_state_is_reported_without_mutation(self):
@@ -1798,6 +1954,8 @@ class NativeBridge(unittest.TestCase):
         self.assertIn('Continue locally executable work',body)
         self.assertIn('After any required Skill load or approach statement, immediately execute',body)
         self.assertIn('never end with only intent, diagnosis or a next-step description',body)
+        self.assertIn('ordinary Owner work, not an answer-only query',body)
+        self.assertIn('delivery gate and one `worker_done`',body);self.assertIn('terminal prose is never delivery',body)
         submit.assert_called_once_with('orca','term-current')
         self.assertTrue(out['result']['woken'])
 
@@ -1913,7 +2071,7 @@ class CliEase(unittest.TestCase):
         from mats import main
         out=io.StringIO()
         with contextlib.redirect_stdout(out):rc=main(['-h'])
-        text=out.getvalue();self.assertEqual(rc,0);self.assertNotIn('allow-read-evidence',text);self.assertNotIn('native-send',text);self.assertNotIn('result',text);self.assertIn('activate',text);self.assertIn('bootstrap',text);self.assertIn('advance',text);self.assertIn('steer',text);self.assertIn('deliver',text);self.assertIn('migrate',text);self.assertIn('user-directed',text);self.assertIn('read-only',text)
+        text=out.getvalue();self.assertEqual(rc,0);self.assertNotIn('allow-read-evidence',text);self.assertNotIn('native-send',text);self.assertNotIn('result',text);self.assertIn('activate',text);self.assertIn('bootstrap',text);self.assertIn('advance',text);self.assertIn('steer',text);self.assertIn('query',text);self.assertIn('answer',text);self.assertIn('deliver',text);self.assertIn('migrate',text);self.assertIn('user-directed',text);self.assertIn('read-only',text)
 
     def test_low_level_transaction_commands_are_not_model_facing(self):
         from mats import main
@@ -2145,6 +2303,17 @@ class ActivationContract(unittest.TestCase):
         self.assertIn('pass it unchanged with `dispatch --continue-owner`',workflow)
         self.assertIn('test request or evidence/log addition',workflow)
         self.assertIn('never searches/opens product source, binaries, raw domain logs/evidence or worker transcripts',workflow)
+
+    def test_answer_only_questions_use_one_correlated_owner_query_not_continuation(self):
+        root=ROOT/'skill/multi-agent-task-split/references';control=(root/'roles/control.md').read_text();workflow=(root/'workflow.md').read_text();routing=(root/'routing.md').read_text()
+        self.assertIn('answer-only Owner-query-directed',control)
+        self.assertIn('answer from user/control state or verified semantic summaries',control)
+        self.assertIn('send an answer-only question through `steer`/`dispatch --continue-owner`',control)
+        for needle in ('Control answers without worker I/O','mats query','OWNER_ANSWER_READY','normal continuation is never answer-only'):
+            self.assertIn(needle,workflow)
+        self.assertIn('Direct Control answer',routing)
+        self.assertIn('Retained Owner answer-only query',routing)
+        self.assertIn('never disguise work as a query',routing)
 
     def test_control_does_not_infer_planner_trigger_from_product_impact(self):
         root=ROOT/'skill/multi-agent-task-split/references'

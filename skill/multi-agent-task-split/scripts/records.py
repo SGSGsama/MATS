@@ -122,6 +122,30 @@ class Records:
         if create:p.parent.mkdir(parents=True,exist_ok=True)
         return p
 
+    def owner_query_path(self,query_id,*,create=False):
+        identifier(query_id)
+        p=contained(self.root,f'tmp/owner-queries/{query_id}.yaml')
+        if create:p.parent.mkdir(parents=True,exist_ok=True)
+        return p
+
+    def owner_answer_path(self,query_id,*,create=False):
+        identifier(query_id)
+        p=contained(self.root,f'tmp/owner-answers/{query_id}.txt')
+        if create:p.parent.mkdir(parents=True,exist_ok=True)
+        return p
+
+    def clear_owner_queries_for_delivery(self,delivery_id):
+        """Clear answer-only tmp state after the shared native batch is acked."""
+        identifier(delivery_id);root=contained(self.root,'tmp/owner-queries')
+        if not root.exists():return []
+        cleared=[]
+        for path in sorted(root.glob('*.yaml')):
+            value=load(path)
+            if isinstance(value,dict) and value.get('kind')=='owner_query' and value.get('received_delivery_id')==delivery_id:
+                query_id=value.get('id');identifier(query_id)
+                path.unlink(missing_ok=True);self.owner_answer_path(query_id).unlink(missing_ok=True);cleared.append(query_id)
+        return cleared
+
     def active_milestone(self):
         state_path=contained(self.root,'semantic.yaml')
         if not state_path.exists(): raise Rejected('semantic state does not define an active milestone')

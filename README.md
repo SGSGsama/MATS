@@ -2,7 +2,7 @@
 
 MATS (`multi-agent-task-split`) is a Codex Skill for decomposing long-running work, assigning stable roles, and coordinating Orca-managed agents through implementation, review, and acceptance.
 
-Current release: **1.0.2**. MATS uses semantic versioning: the second number is incremented for functional changes, and the third for fixes or small patches. The task-contract schema has its own version (`schema_version: 9`) and is not the product version.
+Current release: **1.1.0**. MATS uses semantic versioning: the second number is incremented for functional changes, and the third for fixes or small patches. The task-contract schema has its own version (`schema_version: 9`) and is not the product version.
 
 ## Setup guide
 
@@ -99,7 +99,7 @@ In Command Prompt or PowerShell:
 %USERPROFILE%\.codex\skills\multi-agent-task-split\bin\mats.cmd doctor
 ```
 
-A healthy installation reports `version: 1.0.2`, `isolated_runtime: true`, and valid policy/operator configuration. `live_orca_verified: false` is normal: `doctor` is intentionally non-mutating and does not start an agent.
+A healthy installation reports `version: 1.1.0`, `isolated_runtime: true`, and valid policy/operator configuration. `live_orca_verified: false` is normal: `doctor` is intentionally non-mutating and does not start an agent.
 
 ## Usage
 
@@ -129,6 +129,7 @@ Continue talking to the current Control session in ordinary language. Control ow
 | Provide new evidence | `新日志放在 debug/latest.log，继续定位这个问题。` |
 | Continue the current project | `继续自主完成剩余工作。` |
 | Ask for progress | `检查目前进度，告诉我正在做什么和还缺什么。` |
+| Ask the retained specialist one question | `问 Research：当前证据能否排除分帧错误？只回答这个问题。` |
 | Adjust the active Owner directly | `把这条要求发给当前 Owner：只使用新日志作为证据。` |
 | Approve an external action | `可以推送新服务端，但不要重启远程进程。` |
 | Keep an external action gated | `本地修改和测试自主完成，需要推送、部署或重启时询问。` |
@@ -136,6 +137,7 @@ Continue talking to the current Control session in ordinary language. Control ow
 Some important interaction rules:
 
 - A general `继续`, status question, Skill instruction, or lifecycle question is addressed to Control. It is not copied verbatim into a worker prompt.
+- Questions already answerable from your message, control state, or a verified semantic summary are answered by Control directly. A bounded domain question that needs new evidence uses a lightweight retained-Owner query; Control does not open raw product material itself. The query creates no candidate, repeats no initialization, and is never sent twice.
 - New product requirements, logs, and in-scope corrections normally stay with the existing Owner for that work package. They do not automatically create a new Planner or a fresh Owner.
 - To bypass normal routing and send a small adjustment to the currently active Owner, address the Owner explicitly as shown above.
 - If required remote evidence is unavailable to a worker, it asks for that exact evidence. It does not invent results or turn the absence into a fake tool failure.

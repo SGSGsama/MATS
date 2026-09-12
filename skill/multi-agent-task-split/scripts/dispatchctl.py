@@ -41,7 +41,7 @@ def _internal_ref(g,value,folder):
 def _doctor_output():
     validate_policy(load(ROOT/'config/policy.yaml'));validate_operator(load(ROOT/'config/operator-defaults.yaml'))
     runtime=managed_runtime_status()
-    return {'version':'1.0.2','schema_version':9,'policy_valid':True,'operator_defaults_valid':True,
+    return {'version':'1.1.0','schema_version':9,'policy_valid':True,'operator_defaults_valid':True,
             'live_orca_verified':False,'model_calls':0,'orca_executable':shutil.which('orca') or shutil.which('orca-ide'),
             **runtime,'jsonschema_external_required':False,
             'note':'Binary presence is not runtime/model/permission verification. No live launch is made.'}
@@ -158,6 +158,7 @@ def _finish_completion_batch(g,event,cli):
         except Rejected as exc:
             return {'acknowledged':False,'released':released,'release_error':None,'ack_error':str(exc)}
         _confirm_lifecycle_operation(g,'ack',delivery_id)
+    g.files.clear_owner_queries_for_delivery(delivery_id)
     g.clear_completion_batch(event)
     return {'acknowledged':True,'released':released,'release_error':None,'ack_error':None}
 

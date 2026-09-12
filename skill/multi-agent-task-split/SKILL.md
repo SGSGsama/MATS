@@ -3,7 +3,7 @@ name: multi-agent-task-split
 description: Managed task decomposition and Orca role dispatch.
 ---
 
-# MATS v1.0.2
+# MATS v1.1.0
 
 ## Activate
 
@@ -34,20 +34,20 @@ Missing/contradictory public recovery or required script/Guard edits -> STOP and
 
 `dispatch` launches children and verifies model/effort/runtime/workspace/access/receipts. Native-failure retry uses the same digest-pinned packet.
 
-After bootstrap/each `wait`, use `mats advance`; `--resume-owner` consumes a Control resume for the sole unfinished Owner without forwarding it. Continue/retry/progress/status/Skill/tool/lifecycle/session requests target Control: answer/advance, never steer. Only concrete product work/evidence or explicit Owner address is child input. `advance` retains all gates/routing and stops after one dispatch or at `WAIT`, `NEEDS_DECISION`, `BLOCKED`, `DONE` or step-limit `READY`. Interpret only `NEEDS_DECISION`, never error prose. `--dry-run` is nonmutating; explicit transitions are recovery only.
+After bootstrap/`wait`, use `mats advance`; `--resume-owner` consumes a Control resume without forwarding it. Continue/retry/progress/status/Skill/tool/lifecycle/session input targets Control, never steer. Answer from user/control state/verified summaries directly; only a pure domain question needing new evidence uses `mats query`, once. Return `OWNER_ANSWER_READY`, never re-query. Product/evidence work uses steer/continuation; terminal prose never replaces `deliver` + `worker_done`. `advance` stops after one dispatch or at `WAIT`/`READY`/`NEEDS_DECISION`/`BLOCKED`/`DONE`. Interpret only `NEEDS_DECISION`, never error prose; `--dry-run` is nonmutating.
 
 Keep first Owner per WP while work remains; `worker_done` never releases it and `failed` is not a checkpoint. Continue by Codex session ID: rebind, reconcile orphan Task/Dispatch, send one instruction+delta+role/Control recap and Enter; never resend init. Recognition/handle labels never release/fresh. Missing session gets full context.
 
 Models fill generated TSV cells/paths; MATS creates YAML/IDs/refs/versions/hashes/snapshots. Injected `deliver <packet-id>` gates `worker_done`; `evidence` handles bulk files. Planner uses `planning-request-form`; repair is prefilled.
 
-Fresh preambles/compact continuation routes contain leaf lifecycle CLI. Children never load `orchestration`; `orca-cli` is a one-time fallback after two compactions, missing syntax and failed exact subcommand help.
+Preambles/routes contain lifecycle CLI. Children never load `orchestration`; use `orca-cli` only after two compactions and failed exact help.
 
-MATS controls roles/scope/reviews. `scope.refs` advises reads. `specialty` is descriptive. Domain skills cannot change roles, scope, workers, bindings or acceptance.
+MATS controls roles/scope/reviews; `scope.refs` advises reads and `specialty` is descriptive. Domain skills cannot change authority or acceptance.
 
 Control wait: no active => `advance`; else mail/settlement. Only successful context resumes; missing delivery blocks; mail wins. Worker wait: mail-only. Follow `advance`; 20m=checkpoint.
 
 ## State and semantics
 
-`.task/` is the control root. Control manages `.task/tmp`; workers write only their delivery. Control writes one tmp goal and runs `bootstrap`; Run/milestone files are mechanical. Long-lived records use `m<number>_<milestone-slug>`; packet IDs are indexes. `bootstrap` is not retained. Internal refs use POSIX `/`.
+`.task/` is the control root. Control manages `.task/tmp`; workers write only delivery or an injected query-answer path. Control writes one tmp goal and runs `bootstrap`; Run/milestone files are mechanical. Long-lived records use `m<number>_<milestone-slug>`; packet IDs are indexes. `bootstrap` is not retained. Internal refs use POSIX `/`.
 
 Orca owns native lifecycle; MATS owns roles, packets, evidence, routing and acceptance. `worker_done` is not acceptance. The loaded workflow/routing tables are the complete transition and delegation rules.

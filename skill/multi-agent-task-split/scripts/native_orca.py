@@ -465,6 +465,7 @@ def send_dispatch_adjustment(cli, *, run_id, task_id, dispatch_id, session_id, w
         'Apply this only within the current role/WP/authority and existing external-mutation limits. If it conflicts with the current contract, report plan_conflict; do not silently redesign the plan.',
         'Continue locally executable work to a candidate or concrete blocker; an unfinished turn is not a checkpoint.',
         'After any required Skill load or approach statement, immediately execute the concrete work in this same turn; never end with only intent, diagnosis or a next-step description.',
+        'This is ordinary Owner work, not an answer-only query: finish through the loaded MATS delivery gate and one `worker_done`; terminal prose is never delivery.',
         '',instructions.strip(),'','--- END USER ADJUSTMENT ---',
     ])
     shown=worker_show(cli,dispatch_id);native=shown.get('result') or {};dispatch=native.get('dispatch') or {}
@@ -481,22 +482,39 @@ def send_dispatch_adjustment(cli, *, run_id, task_id, dispatch_id, session_id, w
             'native_worker_show_receipt':shown,'native_terminal_inventory_receipt':proof,
             'native_delivery_receipt':delivery,'native_submit_receipt':submit}
 
-def wait_events(cli, *, timeout_ms=1_200_000):
+
+def send_owner_answer(cli, *, run_id, task_id, dispatch_id, terminal, query_id, answer):
+    """Send one non-completing, query-correlated answer to the Run mailbox."""
+    for value in (run_id,task_id,dispatch_id,query_id):identifier(value)
+    if not isinstance(terminal,str) or not terminal:
+        raise Rejected('Owner answer requires the exact retained terminal')
+    if not isinstance(answer,str) or not answer.strip():
+        raise Rejected('Owner answer must be nonempty')
+    return run_json([cli,'orchestration','send','--run',run_id,'--from',terminal,
+                     '--subject',f'MATS owner answer {query_id}','--body',answer.strip(),
+                     '--type','status','--task-id',task_id,'--dispatch-id',dispatch_id,'--json'])
+
+
+def _event_types(include_status=False):
+    return 'worker_done,escalation,question,status' if include_status else 'worker_done,escalation,question'
+
+
+def wait_events(cli, *, timeout_ms=1_200_000, include_status=False):
     if timeout_ms < 1_200_000:
         raise Rejected('managed wait timeout must be at least 1200000 ms (20 minutes)')
-    receipt=run_json([cli,'orchestration','check','--wait','--types','worker_done,escalation,question','--timeout-ms',str(timeout_ms),'--json'])
+    receipt=run_json([cli,'orchestration','check','--wait','--types',_event_types(include_status),'--timeout-ms',str(timeout_ms),'--json'])
     result=receipt.get('result') or {};timed_out=bool(result.get('timedOut'));messages=result.get('messages') or []
     return {'mode':'event_driven','timeout_ms':timeout_ms,'status':'checkpoint' if timed_out and not messages else 'events','messages':messages,'native_receipt':receipt,
             'note':'timeout/checkpoint is not worker failure; wait again unless an authoritative terminal/lifecycle event requires action' if timed_out and not messages else 'process every returned event before the next wait'}
 
 
-def claim_available_events(cli, *, timeout_ms=1_200_000, claim_timeout_ms=5_000):
+def claim_available_events(cli, *, timeout_ms=1_200_000, claim_timeout_ms=5_000, include_status=False):
     """Nonblocking Run-mail probe; claim a visible FIFO batch exactly once."""
     if timeout_ms < 1_200_000:
         raise Rejected('managed wait timeout must be at least 1200000 ms (20 minutes)')
     if not isinstance(claim_timeout_ms,int) or claim_timeout_ms < 1:
         raise Rejected('event claim timeout must be a positive integer')
-    kinds='worker_done,escalation,question'
+    kinds=_event_types(include_status)
     peek=run_json([cli,'orchestration','check','--peek','--types',kinds,'--json'])
     messages=(peek.get('result') or {}).get('messages') or []
     if not messages:return None
@@ -510,7 +528,7 @@ def claim_available_events(cli, *, timeout_ms=1_200_000, claim_timeout_ms=5_000)
             'note':'process every returned event before the next wait'}
 
 
-def wait_events_or_context_completion(cli, dispatch_ids, *, timeout_ms=1_200_000, poll_interval_ms=5_000):
+def wait_events_or_context_completion(cli, dispatch_ids, *, timeout_ms=1_200_000, poll_interval_ms=5_000, include_status=False):
     """Wait for lifecycle mail or a proved context-only Dispatch completion.
 
     Orca's plain context dispatch can finish a Codex turn without emitting
@@ -527,12 +545,12 @@ def wait_events_or_context_completion(cli, dispatch_ids, *, timeout_ms=1_200_000
     dispatch_ids=list(dict.fromkeys(dispatch_ids))
     for dispatch_id in dispatch_ids:identifier(dispatch_id)
 
-    kinds='worker_done,escalation,question'
+    kinds=_event_types(include_status)
     deadline=time.monotonic()+(timeout_ms/1000)
 
     def check(*,wait=False,window_ms=None):
         if not wait:
-            return claim_available_events(cli,timeout_ms=timeout_ms,claim_timeout_ms=poll_interval_ms)
+            return claim_available_events(cli,timeout_ms=timeout_ms,claim_timeout_ms=poll_interval_ms,include_status=include_status)
         argv=[cli,'orchestration','check','--wait' if wait else '--peek','--types',kinds]
         if wait:argv += ['--timeout-ms',str(window_ms)]
         receipt=run_json([*argv,'--json'])
