@@ -76,7 +76,7 @@ def _memo_rows(memo):
     return rows
 
 
-def _owner_form(prefill):
+def _owner_form(prefill, *, recovered=False):
     value = prefill if isinstance(prefill, dict) else {}
     rows = [('status', value.get('status')), ('summary', value.get('summary')), ('impact', value.get('impact'))]
     rows += _paths(value.get('evidence', []))
@@ -92,7 +92,17 @@ def _owner_form(prefill):
         rows.append(('consumed_side', key, path, item.get('disposition'), item.get('reason')))
         for row_name, evidence_path in _paths(item.get('verified_evidence', [])):
             rows.append(('consumed_manifest' if row_name == 'evidence_manifest' else 'consumed_evidence', key, evidence_path))
-    return _emit('result', [
+    if recovered:
+        for spec in value.get('recovered_specs', []):
+            if not isinstance(spec,dict):continue
+            sid=spec.get('id');subject=spec.get('subject');subject=subject.get('path') if isinstance(subject,dict) else subject
+            rows.append(('recovered_spec',sid,spec.get('kind'),spec.get('confidence'),subject))
+            rows.extend(('recovered_locator',sid,item) for item in spec.get('locators',[]))
+            rows.extend(('recovered_fact',sid,item) for item in spec.get('facts',[]))
+            rows.extend(('recovered_validation',sid,item) for item in spec.get('validation',[]))
+            for row_name,path in _paths(spec.get('evidence',[])):
+                rows.append(('recovered_manifest' if row_name=='evidence_manifest' else 'recovered_evidence',sid,path))
+    comments=[
         'Fill column values; keep the header and row names. Add repeatable rows as needed.',
         'status is candidate, blocked, failed, or plan_conflict; native succeeded is not a semantic status. candidate means every WP exit condition is met.',
         'Rows: status, summary, impact, evidence/evidence_manifest, unresolved, structural_tag.',
@@ -100,7 +110,9 @@ def _owner_form(prefill):
         'Memo rows: claim, observation, memo_unknown, downstream_impact, decision_requested, memo_evidence/memo_manifest, memo_source for .task results/reviews.',
         'Optional Aux rows: consumed_side <key> <side-result .task path> <disposition> <reason>; consumed_evidence/manifest <key> <path>.',
         'Do not add schema, snapshot, hashes, versions, binding IDs or other transaction fields.',
-    ], rows)
+    ]
+    if recovered:comments.insert(-1,'Optional recovered rows: recovered_spec <id> <abi|data_layout|protocol|state_machine|execution_chain|algorithm|cryptographic_behavior|security_mechanism> <confirmed|probable|hypothesis> <subject-path>; repeat recovered_locator/fact/validation/evidence/manifest <id> <value>.')
+    return _emit('result',comments,rows)
 
 
 def _review_form(prefill):
@@ -280,7 +292,7 @@ def _planner_comments(*, full):
 def render_form(packet, *, prefill=None):
     role = packet.get('role')
     if role in {'research', 'engineering'}:
-        return _owner_form(prefill)
+        return _owner_form(prefill,recovered=role=='research')
     if role in {'review_r1', 'review_r2'}:
         return _review_form(prefill)
     if role in {'luna_aux', 'synthesis'}:
@@ -346,6 +358,7 @@ def _parse_result(rows):
     out = {'evidence': [], 'unresolved': [], 'structural_tags': [], 'source_memo': _memo(), 'consumed_sides': []}
     singles = {}
     consumed = {}
+    recovered = {}
     memo_names = {'claim', 'observation', 'memo_unknown', 'downstream_impact', 'decision_requested', 'memo_evidence', 'memo_manifest', 'memo_source'}
     for line, row in rows:
         kind = row[0]
@@ -371,9 +384,25 @@ def _parse_result(rows):
             _arity(line, row, 3)
             if row[1] not in consumed: raise Rejected('consumed evidence precedes/has unknown side key: ' + row[1])
             consumed[row[1]]['verified_evidence'].append(row[2] if kind == 'consumed_evidence' else {'manifest': row[2]})
+        elif kind == 'recovered_spec':
+            _arity(line,row,5)
+            if row[1] in recovered:raise Rejected('duplicate recovered spec ID: '+row[1])
+            if row[2] not in {'abi','data_layout','protocol','state_machine','execution_chain','algorithm','cryptographic_behavior','security_mechanism'}:
+                raise Rejected(f'form line {line} recovered spec kind is not supported')
+            if row[3] not in {'confirmed','probable','hypothesis'}:
+                raise Rejected(f'form line {line} recovered confidence is not supported')
+            recovered[row[1]]={'id':row[1],'kind':row[2],'confidence':row[3],'subject':row[4],
+                               'locators':[],'facts':[],'validation':[],'evidence':[]}
+        elif kind in {'recovered_locator','recovered_fact','recovered_validation','recovered_evidence','recovered_manifest'}:
+            _arity(line,row,3)
+            if row[1] not in recovered:raise Rejected('recovered child row precedes/has unknown spec ID: '+row[1])
+            field={'recovered_locator':'locators','recovered_fact':'facts','recovered_validation':'validation'}.get(kind)
+            if field:recovered[row[1]][field].append(row[2])
+            else:recovered[row[1]]['evidence'].append(row[2] if kind=='recovered_evidence' else {'manifest':row[2]})
         else:
             raise Rejected(f'unknown result form row `{kind}` at line {line}')
     out.update(singles); out['consumed_sides'] = list(consumed.values())
+    if recovered:out['recovered_specs']=list(recovered.values())
     return out
 
 

@@ -10,6 +10,10 @@ from routing import fixed_binding
 
 
 def memo():return {'claims':['Measured semantics match the contract.'],'observations':['Inspected raw source.'],'unknowns':[],'downstream_impact':[],'decision_requested':'','evidence_refs':[]}
+def recovered_spec():return {'id':'session_dispatch','kind':'abi','confidence':'confirmed','subject':'raw.txt',
+                             'locators':['symbol:dispatch_session','rva:0x1200'],
+                             'facts':['Windows x64 fastcall; returns zero on accepted input.'],
+                             'validation':['Decompiler signature agrees with two call sites.'],'evidence':['src/main.py']}
 def project():return {'schema_version':9,'project_id':'P','goal':'Build a verified tool','phase':'research','commitments':[{'id':'C1','statement':'Evidence precedes commitment.','scope':'global','applies_to':[]}],'boundaries':['No production deployment.'],'strategic_risks':['Silent semantic error'],'working_hypotheses':[],'open_questions':[]}
 def wp(wid='WP1',role='research',deps=None):return {'id':wid,'title':'Understand behavior','owner_role':role,'objective':'Establish behavior with evidence','constraints':[],'exit_conditions':['Raw evidence supports the result.'],'dependencies':deps or [],'required_skills':[],'scope':{'paths':['src'] if role=='engineering' else [],'refs':[]},'impact':'local','review_policy':'r1','required_checks':['unit'] if role=='engineering' else [],'depends_on_commitments':[]}
 def plan():return {'schema_version':9,'plan_id':'m0_baseline','project_id':'P','version':1,'work_packages':[wp(),wp('WP2',deps=['WP1']),wp('WP3')]}

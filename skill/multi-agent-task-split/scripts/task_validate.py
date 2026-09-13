@@ -12,7 +12,7 @@ from common import ROOT, Rejected, digest, load, relative
 from records import MILESTONE_FOLDERS, MILESTONE_ID
 
 
-TARGET_RELEASE = '1.2.0'
+TARGET_RELEASE = '1.3.0'
 LAYOUT = 'milestone-nested-v1'
 ALLOWED_TOP_LEVEL_DIRS = frozenset({
     'archive', 'config', 'directives', 'operations', 'payloads', 'provenance', 'tmp',

@@ -160,7 +160,15 @@ class Guards:
         if isinstance(memo,dict):items += [item for item in memo.get('evidence_refs',[]) if self._internal_memo_source(item) is None]
         for side in result.get('consumed_sides',[]) if isinstance(result,dict) else []:
             if isinstance(side,dict):items += list(side.get('verified_evidence',[]))
+        for spec in result.get('recovered_specs',[]) if isinstance(result,dict) else []:
+            if isinstance(spec,dict):
+                if spec.get('subject') is not None:items.append(spec['subject'])
+                items += list(spec.get('evidence',[]))
         return items
+    @staticmethod
+    def _role_result_contract(role,result):
+        if role!='research' and isinstance(result,dict) and 'recovered_specs' in result:
+            raise Rejected('recovered_specs may be authored only by a Research Owner')
     def _packet_snapshot(self,s,packet,w,repo,declared):
         roots=self.policy(s)['evidence_roots'];declared=list(declared)
         declared_paths=evidence_logical_paths(repo,declared,roots)
@@ -275,12 +283,18 @@ class Guards:
             repo=wanted;w=self._wp(s,packet['wp_id'])
         roots=self.policy(s)['evidence_roots']
         if role in OWNERS:
+            self._role_result_contract(role,out)
             live=self._packet_snapshot(s,packet,w,repo,self._delivery_evidence(out))
             # Snapshot is Guard-owned. Always replace stale/model-authored values so
             # absence of a private snapshot API can never become a worker blocker.
             out['snapshot']=live['sha256']
             out['evidence']=materialize_evidence(repo,out.get('evidence',[]),roots,live['sha256'])
             out['source_memo']=self._materialize_memo(repo,out.get('source_memo'),roots,live['sha256'])
+            for spec in out.get('recovered_specs',[]):
+                if isinstance(spec.get('subject'),dict) and set(spec['subject'])=={'manifest'}:
+                    raise Rejected('recovered spec subject must name one binary file, not an evidence manifest')
+                spec['subject']=materialize_evidence(repo,[spec.get('subject')],roots,live['sha256'])[0]
+                spec['evidence']=materialize_evidence(repo,spec.get('evidence',[]),roots,live['sha256'])
             out.setdefault('consumed_sides',[])
             for item in out['consumed_sides']:
                 if isinstance(item,dict):
@@ -368,6 +382,7 @@ class Guards:
         if kind is None or packet.get('output_contract')!=kind:
             raise Rejected('packet role/output contract mismatch')
         validate(kind,result)
+        if packet['role'] in OWNERS:self._role_result_contract(packet['role'],result)
         memo=result.get('source_memo') if isinstance(result,dict) else None
         if isinstance(memo,dict):
             for ref in memo.get('source_refs',[]):self.files.get(ref)
@@ -386,7 +401,7 @@ class Guards:
                     matched=(bref,repo);break
             if matched is None: raise Rejected('owner delivery snapshot does not match any bound workspace')
             bref,repo=matched
-            verify_evidence(repo,result['evidence']+result['source_memo']['evidence_refs'],self.policy(s)['evidence_roots'],workspace_snapshot=result['snapshot'])
+            verify_evidence(repo,self._delivery_evidence(result),self.policy(s)['evidence_roots'],workspace_snapshot=result['snapshot'])
             if result['status']=='candidate':
                 self._validate_consumption({'binding_ref':bref,'wp_id':packet['wp_id'],'result':result},s)
         elif packet['role'].startswith('review_'):
@@ -756,9 +771,10 @@ class Guards:
     def verify_candidate(self,c,s=None,*,repo_override=None):
         s=s or self.state();b=self._binding(c['binding_ref']);packet=self.files.get(b['packet_ref']);self._current_contract(s,packet)
         w=self._wp(s,c['wp_id']);repo=Path(repo_override or b['receipt']['workspace_path'])
+        self._role_result_contract(packet['role'],c['result'])
         live=self._packet_snapshot(s,packet,w,repo,self._delivery_evidence(c['result']))
         if live['sha256']!=c['result']['snapshot']: raise Rejected('candidate changed after result/R0/review')
-        verify_evidence(repo,c['result']['evidence']+c['result']['source_memo']['evidence_refs'],self.policy(s)['evidence_roots'],workspace_snapshot=live['sha256'])
+        verify_evidence(repo,self._delivery_evidence(c['result']),self.policy(s)['evidence_roots'],workspace_snapshot=live['sha256'])
         return live
     def import_result(self,binding_ref,result,completion):
         b=self._binding(binding_ref);self._completion(b,completion);s=self.state();packet=self.files.get(b['packet_ref']);self._current_contract(s,packet)
@@ -784,6 +800,7 @@ class Guards:
                 raise Rejected(f'Planner output semantic contract rejected; retry only with repair_of={feedback["path"]}#{feedback["sha256"]}: {exc}') from exc
         else:
             validate(kind,result)
+            if role in OWNERS:self._role_result_contract(role,result)
         memo=result.get('source_memo') if isinstance(result,dict) else None
         if isinstance(memo,dict):
             for ref in memo.get('source_refs',[]):self._materialize_internal_ref(ref,prefixes=('results','reviews'))
@@ -797,6 +814,8 @@ class Guards:
             core['content']={'files':live['manifest']['files'],'worktree':live['manifest']['worktree_diff_sha256'],'index':live['manifest']['index_diff_sha256']}
             core['evidence']=sorted(set(e['sha256'] for e in core['evidence']))
             core['source_memo']['evidence_refs']=sorted(set(e['sha256'] for e in core['source_memo']['evidence_refs']))
+            for spec in core.get('recovered_specs',[]):
+                spec['subject']=spec['subject']['sha256'];spec['evidence']=sorted(set(e['sha256'] for e in spec['evidence']))
             # Nonce/dispatch/packet/title changes cannot reset an adverse review.
             v['snapshot_manifest']=live['manifest']
             v['work_digest']=digest({'contract':packet['contract_digest'],'result':core})

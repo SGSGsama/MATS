@@ -202,6 +202,62 @@ $defs:
     - snapshot
     - checks
     type: object
+  recovered_spec:
+    additionalProperties: false
+    properties:
+      id:
+        pattern: ^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$
+        type: string
+      kind:
+        enum:
+        - abi
+        - data_layout
+        - protocol
+        - state_machine
+        - execution_chain
+        - algorithm
+        - cryptographic_behavior
+        - security_mechanism
+      confidence:
+        enum:
+        - confirmed
+        - probable
+        - hypothesis
+      subject:
+        $ref: '#/$defs/evidence'
+      locators:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      facts:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      validation:
+        items:
+          minLength: 1
+          type: string
+        minItems: 1
+        type: array
+      evidence:
+        items:
+          $ref: '#/$defs/evidence'
+        minItems: 0
+        type: array
+    required:
+    - id
+    - kind
+    - confidence
+    - subject
+    - locators
+    - facts
+    - validation
+    - evidence
+    type: object
   result:
     additionalProperties: false
     properties:
@@ -216,6 +272,11 @@ $defs:
         - module
         - cross_boundary
         - unknown
+      recovered_specs:
+        items:
+          $ref: '#/$defs/recovered_spec'
+        minItems: 1
+        type: array
       schema_version:
         const: 9
       snapshot:

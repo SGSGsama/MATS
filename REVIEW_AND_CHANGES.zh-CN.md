@@ -1,4 +1,4 @@
-# MATS v1.2.0 会话审计与本轮修改总览
+# MATS v1.3.0 会话审计与本轮修改总览
 
 本轮以 `init_export.md`、`engineer-session_1.md`、`control_session_1`、`control_session_2.md`、`control_session_3.md`、`control_4.md` 和现场 `.task/` 为运行证据。目标不是削弱约束，而是把可机械复现的事务工作从模型 I/O 中移走，同时保留足够的角色、路由和恢复约束，防止长任务指令漂移。
 
@@ -317,10 +317,18 @@
 - Owner/R1/R2 packet 通过 `work_package.interface_specs` 读取同一份声明，另附短小 binding policy，不复制接口正文。接口修改自动进入既有 WP contract digest、计划影响闭包和复审链，不增加状态机、锁、报告字段或迁移分支；旧计划保持合法。
 - 新增角色文本保留自然、确定性的完整句子：Planner 1284 bytes，Engineering 1349 bytes，分别受 1400-byte 专属上限约束；其他 worker 仍为 1250 bytes，fresh init 总预算也未放宽，没有恢复重复 init prompt。
 
+### 40. v1.3.0 二进制恢复事实的无损交接
+
+- Planner 只定义逆向问题、证据和退出条件，不再把猜测的 ABI、数据布局、协议、状态机、关键执行链、算法或密码/安全行为写成 Engineering 接口。Research 通过可选 `recovered_specs` 交付结构化恢复事实，每项包含单一二进制 subject、稳定 locator、facts、validation、evidence 和 `confirmed|probable|hypothesis` 置信度。
+- Research 仍可编写有界分析、探针和提取脚本；它不承担大型产品工程。接受后的 Research 结果由脚本直接投影到依赖 Engineering packet，避免 Astra/Research -> prose report -> Planner/Terra 二次转述造成的信息失真。
+- 模型只填写语义路径和判断，不手写 SHA/version。finalizer 固定 subject/evidence 身份，Guard 校验实际文件、拒绝重复 ID，并禁止 Engineering 伪装成恢复事实的作者；R1 对 locator、fact、置信度和原始证据做独立复核。
+- `recovered_specs` 是认识论证据，不自动成为项目需求。Engineering 在依赖 probable/hypothesis 前自行验证；只有独立、明确的项目决策才能把已接受事实提升为 `required interface_spec`。旧 result 不含该可选字段时完全不变，无需目录或 schema 迁移。
+- 为保留自然、确定性的角色边界说明，Research/Planner/Engineering 正文实测为 1407/1507/1554 bytes，统一受 1600-byte 上限约束；其他角色、状态机、continue 增量路径和一次性交付约束不变。fresh init 实测为 4355/4205/4505 字符，各自预算仅增加 100 bytes，不恢复重复说明。
+
 ## 验证口径
 
 - Skill Creator `quick_validate.py`：通过。
-- 完整测试集合：396 项（394 个核心测试：`test_spawn.py` 195 项、其余模块 199 项；另有 2 个独立协议不变量）。新增覆盖七类 child prompt 预算/机械交付声明、跨 WP commitment 与 accepted-result 语义投影、Owner 问答单发/幂等/固定答案、纯答案立即 ack、答案与 worker_done 混合批次延迟 ack 及重放去重、steer 交付提醒，以及 interface_specs 的旧计划兼容、角色/路径/ID Guard、full/patch TSV 往返、packet 单份投影和 required/advisory 角色语义；并保留无 active 即返、未交付 settled 阻塞、导入竞态、非阻塞 mail probe、事务 materialize、status/lifecycle 分离和 context-only 释放覆盖。
+- 完整测试集合：402 项（400 个核心测试：`test_spawn.py` 198 项、其余模块 202 项；另有 2 个独立协议不变量）。新增覆盖七类 child prompt 预算/机械交付声明、跨 WP commitment 与 accepted-result 语义投影、Owner 问答单发/幂等/固定答案、纯答案立即 ack、答案与 worker_done 混合批次延迟 ack 及重放去重、steer 交付提醒、`interface_specs` 的旧计划兼容/角色/路径/ID Guard/full+patch TSV 往返/packet 单份投影/required-advisory 语义，以及 `recovered_specs` 的 Research-only 作者约束、TSV 往返、证据固定、重复 ID 拒绝和下游无 hash 无损投影；并保留无 active 即返、未交付 settled 阻塞、导入竞态、非阻塞 mail probe、事务 materialize、status/lifecycle 分离和 context-only 释放覆盖。
 - Windows 用户安装/强制替换/隔离运行测试：通过；额外覆盖含空格路径和 unmanaged interpreter 拒绝。
 - 回归覆盖：所有 role finalizer、Planner 嵌套 `scope.refs` 自动 pin、无授权只读证据自动 pin/产品快照隔离/稳定性、详细 oneOf 诊断、local evidence steer、错误事务字段覆盖、同 packet 多 retry binding、evidence manifest、模型投影、bootstrap-init、自动 Control receipt/runtime view/workspace/access、Orca 单次启动恢复、`.task` snapshot 排除、host mode 差异、单 OS mutex、GBK/UTF-8 输出、daybreak-blue 回退、Owner continuity 和小任务权限边界。
 

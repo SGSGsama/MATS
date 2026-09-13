@@ -89,8 +89,8 @@ class DeterministicSpawn(Base):
                 self.assertIn('failed exact help',text)
                 self.assertIn('Missing remote evidence: request the exact item through the native preamble',text)
                 self.assertNotIn('load its guide only for anomalies',text)
-                limits={'research':4500,'engineering':4500,'review_r1':4300,'review_r2':4100,
-                        'planner':4200,'luna_aux':4000,'synthesis':4000}
+                limits={'research':4600,'engineering':4600,'review_r1':4300,'review_r2':4100,
+                        'planner':4300,'luna_aux':4000,'synthesis':4000}
                 self.assertLessEqual(len(text),limits[role])
 
     def test_fresh_prompt_keeps_each_authority_once_without_aux_manual_repetition(self):
@@ -177,7 +177,30 @@ class DeterministicSpawn(Base):
         self.assertTrue(is_form_bytes(raw));draft=parse_form(raw,expected_kind='result')
         self.assertNotIn('schema_version',draft);self.assertNotIn('snapshot',draft);self.assertEqual(draft['consumed_sides'],[])
         self.assertEqual(set(draft['source_memo']),{'claims','observations','unknowns','downstream_impact','decision_requested','evidence_refs'})
+        self.assertNotIn('recovered_specs',draft)
         self.assertEqual(draft['status'],'');self.assertEqual(draft['summary'],'');self.assertNotRegex(raw.decode(),r'[0-9a-f]{64}')
+
+    def test_research_form_round_trips_recovered_specs_without_transaction_fields(self):
+        spec=recovered_spec();value={'status':'candidate','summary':'Recovered ABI','impact':'module','evidence':[],
+                                    'unresolved':[],'structural_tags':[],'source_memo':memo(),'consumed_sides':[],
+                                    'recovered_specs':[spec]}
+        parsed=parse_form(render_form({'role':'research'},prefill=value),expected_kind='result')
+        self.assertEqual(parsed['recovered_specs'],[spec])
+        self.assertNotIn('sha256',encode(parsed).decode());self.assertNotIn('version',encode(parsed).decode())
+
+    def test_downstream_engineering_packet_gets_lossless_recovered_specs_projection(self):
+        state=self.g.state();down=state['plan']['work_packages'][1]
+        down.update(owner_role='engineering',required_checks=['unit'],scope={'paths':['src'],'refs':[]});self.g.files.commit(state)
+        packet=self.issue();binding=self.launch(packet);result=self.result(binding);result['recovered_specs']=[recovered_spec()]
+        prepared=self.g.prepare_delivery(packet,result,workspace=self.repo);candidate=self.g.import_result(binding,prepared,self.done(binding))
+        self.g.r0(candidate);self.review(candidate);self.g.accept('WP1',self.view())
+        downstream=hydrate(self.g.files,self.issue(wid='WP2'))['upstream'][0]['accepted_result']
+        self.assertEqual(downstream['recovered_specs'],[{
+            'id':'session_dispatch','kind':'abi','confidence':'confirmed',
+            'subject_path':'raw.txt','locators':['symbol:dispatch_session','rva:0x1200'],
+            'facts':['Windows x64 fastcall; returns zero on accepted input.'],
+            'validation':['Decompiler signature agrees with two call sites.'],'evidence_paths':['src/main.py']}])
+        self.assertNotIn('sha256',encode(downstream['recovered_specs']).decode())
 
     def test_repeated_packets_reuse_content_addressed_schema_payload(self):
         first=self.g.files.get(self.issue());second=self.g.files.get(self.issue())
@@ -1771,7 +1794,7 @@ class TaskLayoutValidation(Base):
     def test_current_milestone_layout_is_valid(self):
         from task_validate import validate_task_layout
         report=validate_task_layout(self.repo)
-        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.2.0')
+        self.assertTrue(report['valid']);self.assertEqual(report['target_release'],'1.3.0')
         self.assertNotIn('migration_guide',report)
 
     def test_legacy_top_level_state_is_reported_without_mutation(self):
@@ -2288,6 +2311,7 @@ class ActivationContract(unittest.TestCase):
         synthesis=(root/'synthesis.md').read_text()
         self.assertIn('Owner emits `plan_conflict`',synthesis)
         self.assertNotIn('directly to Planner',synthesis)
+
     def test_skill_renamed_and_normal_control_load_set_is_small_authoritative(self):
         root=ROOT/'skill/multi-agent-task-split';text=(root/'SKILL.md').read_text()
         self.assertIn('name: multi-agent-task-split',text)
@@ -2305,8 +2329,15 @@ class ActivationContract(unittest.TestCase):
 
     def test_research_role_distinguishes_evidence_candidate_from_implementation(self):
         text=(ROOT/'skill/multi-agent-task-split/references/roles/research.md').read_text()
-        for needle in ('bounded research-tool writes','without a shipping product change','reverse engineering','analysis/extraction scripts','`candidate` means exit conditions are met','inspect/fix/test for one bug is Engineering','use `plan_conflict` only if commitments/scope/dependencies must change'):
+        for needle in ('bounded research-tool writes','without a shipping product change','reverse engineering','analysis/extraction scripts','`candidate` means exit conditions are met','inspect/fix/test for one bug is Engineering','use `plan_conflict` only if commitments/scope/dependencies must change','recovered_specs','confidence'):
             self.assertIn(needle,text)
+
+    def test_binary_recovery_contract_preserves_role_and_epistemic_boundaries(self):
+        root=ROOT/'skill/multi-agent-task-split/references/roles'
+        planner=(root/'planner.md').read_text();engineering=(root/'engineering.md').read_text();r1=(root/'review_r1.md').read_text()
+        self.assertIn('never invent recovered ABI',planner);self.assertIn('accepted Research findings',planner)
+        self.assertIn('upstream `recovered_specs`',engineering);self.assertIn('not project requirements',engineering)
+        self.assertIn('confidence',r1);self.assertIn('recovered_specs',r1)
 
     def test_routing_keeps_ordinary_bug_diagnosis_inside_engineering(self):
         text=(ROOT/'skill/multi-agent-task-split/references/routing.md').read_text()

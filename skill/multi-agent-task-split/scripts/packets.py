@@ -31,10 +31,15 @@ def _memo_view(memo,repo,roots):
 
 def _owner_view(record,g,roots):
     binding=g.files.get(record['binding_ref']);repo=Path(binding['receipt']['workspace_path']);result=record['result']
-    return {'status':result['status'],'summary':result['summary'],'evidence_paths':model_evidence_paths(repo,result['evidence'],roots),
+    out={'status':result['status'],'summary':result['summary'],'evidence_paths':model_evidence_paths(repo,result['evidence'],roots),
             'unresolved':result['unresolved'],'impact':result['impact'],'structural_tags':result['structural_tags'],
             'source_memo':_memo_view(result['source_memo'],repo,roots),
             'consumed_sides':[{'disposition':x['disposition'],'reason':x['reason']} for x in result['consumed_sides']]}
+    if result.get('recovered_specs'):
+        out['recovered_specs']=[{k:copy.deepcopy(spec[k]) for k in ('id','kind','confidence','locators','facts','validation')} | {
+            'subject_path':spec['subject']['path'],'evidence_paths':model_evidence_paths(repo,spec['evidence'],roots)}
+            for spec in result['recovered_specs']]
+    return out
 
 
 def _review_view(record,g,roots):

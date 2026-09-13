@@ -118,6 +118,28 @@ class StrictContracts(unittest.TestCase):
         self.assertEqual(contract_digest(a,wp()),contract_digest(b,wp()))
 
 class CandidateAndReview(Base):
+    def test_research_recovered_specs_are_finalized_and_verified(self):
+        packet=self.issue();binding=self.launch(packet);result=self.result(binding);result['recovered_specs']=[recovered_spec()]
+        prepared=self.g.prepare_delivery(packet,result,workspace=self.repo)
+        spec=prepared['recovered_specs'][0]
+        self.assertEqual(spec['subject']['path'],'raw.txt');self.assertRegex(spec['subject']['sha256'],r'^[0-9a-f]{64}$')
+        self.assertEqual(spec['evidence'][0]['path'],'src/main.py');self.assertTrue(self.g.check_delivery(packet,prepared)['valid'])
+
+    def test_recovered_spec_ids_are_unique_in_canonical_results(self):
+        packet=self.issue();binding=self.launch(packet);result=self.result(binding);result['recovered_specs']=[recovered_spec()]
+        prepared=self.g.prepare_delivery(packet,result,workspace=self.repo)
+        prepared['recovered_specs'].append(copy.deepcopy(prepared['recovered_specs'][0]))
+        with self.assertRaisesRegex(Rejected,'duplicate recovered spec IDs'):
+            self.g.check_delivery(packet,prepared)
+
+    def test_engineering_cannot_claim_recovered_discovery(self):
+        state=self.g.state();work=state['plan']['work_packages'][0]
+        work.update(owner_role='engineering',required_checks=['unit'],scope={'paths':['src'],'refs':[]});self.g.files.commit(state)
+        packet=self.issue();binding=self.launch(packet);result=self.result(binding);spec=recovered_spec()
+        spec['subject']=self.evidence()[0];spec['evidence']=self.evidence();result['recovered_specs']=[spec]
+        with self.assertRaisesRegex(Rejected,'Research Owner'):
+            self.g.check_delivery(packet,result)
+
     def test_native_done_does_not_unlock_dependency(self):
         self.candidate()
         with self.assertRaises(Rejected):self.issue(wid='WP2')

@@ -19,6 +19,9 @@ def validate(kind, value):
         if any(f['severity'] in {'blocker','major'} and not f['resolved'] for f in value['findings']):
             raise Rejected('PASS with unresolved major/blocker')
     if kind == 'result':
+        spec_ids=[spec['id'] for spec in value.get('recovered_specs',[])]
+        if len(spec_ids)!=len(set(spec_ids)):
+            raise Rejected('duplicate recovered spec IDs')
         if value['status'] == 'candidate' and value['unresolved']:
             raise Rejected('candidate cannot leave material unresolved items')
         if value['status'] == 'plan_conflict' and not value['source_memo']['decision_requested'].strip():
@@ -68,6 +71,7 @@ def planner_contract_checklist(project, plan, request, approved_checks):
             'A qualification/validation WP may measure, package and report evidence but MUST NOT become an open-ended substantive implementation loop; route new code faults back to an Engineering remediation owner or a new plan occasion when boundaries change.',
             'Do not create a technical WP merely to represent waiting for one external/user action; require an owner WP only when evidence preparation/interpretation or another coherent semantic outcome is actually needed.',
             'Run counts, durations, exact thresholds and similar test procedure details invented by Planner remain proposed validation procedure/checks unless the user/source evidence explicitly makes them project commitments.',
+            'For binary analysis, plan Research questions and evidence exit conditions; never invent recovered ABI/layout/flow/cryptography as interface_specs. Promote accepted Research findings only when a project decision requires implementation compatibility.',
         ],
         'wp_contract': [
             'Every dependency names an existing WP and the dependency graph is acyclic.',
